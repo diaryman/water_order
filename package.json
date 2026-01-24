@@ -9,11 +9,11 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@prisma/client": "^5.22.0",
+    "@prisma/client": "5.22.0",
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
     "next": "16.1.4",
-    "prisma": "^5.22.0",
+    "prisma": "5.22.0",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },
