@@ -93,7 +93,7 @@ export async function deleteGroup(id: number) {
     if (!group) return { error: 'ไม่พบกลุ่มงาน' }
 
     // Check if any member has orders
-    const hasOrders = group.members.some(m => m.orders.length > 0)
+    const hasOrders = group.members.some((m: any) => m.orders.length > 0)
 
     if (hasOrders) {
         return { error: `ไม่สามารถลบได้ เนื่องจากมีสมาชิกในกลุ่มนี้ที่มีประวัติการสั่งซื้อ` }
@@ -298,11 +298,18 @@ export async function togglePaymentMethod(id: number, isActive: boolean) {
 }
 
 // --- Orders ---
-export async function getAdminOrders() {
+export async function getAdminOrders(roundId?: number) {
+    const whereClause: any = {};
+    if (roundId && roundId > 0) {
+        whereClause.roundId = roundId;
+    }
+
     return await prisma.order.findMany({
+        where: whereClause,
         include: {
             member: { include: { group: true } },
-            items: { include: { product: true } }
+            items: { include: { product: true } },
+            round: true
         },
         orderBy: { createdAt: 'desc' }
     });
@@ -352,4 +359,67 @@ export async function uploadFile(formData: FormData) {
 }
 
 export const uploadSlip = uploadFile; // Alias for backward compatibility
+export async function getDashboardStats() {
+    // 1. Basic Counts
+    const totalMembers = await prisma.member.count();
+    const totalOrders = await prisma.order.count();
 
+    // 2. Revenue & Water Counts
+    // We need to aggregate from items for precise product type counts
+    const allItems = await prisma.orderItem.findMany({
+        include: { product: true }
+    });
+
+    let totalRevenue = 0;
+    let totalSmall = 0;
+    let totalLarge = 0;
+
+    allItems.forEach((item: any) => {
+        totalRevenue += item.price * item.quantity; // Or use item.price matches order total logic
+        if (item.product.type === 'SMALL') totalSmall += item.quantity;
+        if (item.product.type === 'LARGE') totalLarge += item.quantity;
+    });
+
+    // 3. Recent Orders
+    const recentOrders = await prisma.order.findMany({
+        take: 10,
+        orderBy: { createdAt: 'desc' },
+        include: {
+            member: { include: { group: true } },
+            round: true
+        }
+    });
+
+    // 4. Top Groups (Calculate manually for SQLite compatibility)
+    // Fetch all orders with their group info
+    const ordersWithGroup = await prisma.order.findMany({
+        include: {
+            member: { include: { group: true } }
+        }
+    });
+
+    const groupStats: Record<string, number> = {};
+    ordersWithGroup.forEach((order: any) => {
+        const groupName = order.member.group.name;
+        if (!groupStats[groupName]) {
+            groupStats[groupName] = 0;
+        }
+        groupStats[groupName] += order.total;
+    });
+
+    // Convert to array and sort
+    const topGroups = Object.entries(groupStats)
+        .map(([name, total]) => ({ name, total }))
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 5);
+
+    return {
+        totalMembers,
+        totalOrders,
+        totalRevenue,
+        totalSmall,
+        totalLarge,
+        recentOrders,
+        topGroups
+    };
+}

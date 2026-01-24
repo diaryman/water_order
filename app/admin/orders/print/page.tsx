@@ -16,7 +16,11 @@ function PrintContent() {
         async function load() {
             setLoading(true);
             try {
-                const [o, r] = await Promise.all([getAdminOrders(), getRounds()]);
+                const rID = roundId ? Number(roundId) : undefined;
+                const [o, r] = await Promise.all([
+                    getAdminOrders(rID),
+                    getRounds()
+                ]);
                 setOrders(o);
                 setRounds(r);
             } catch (error) {
@@ -26,15 +30,15 @@ function PrintContent() {
             }
         }
         load();
-    }, []);
+    }, [roundId]);
 
     if (loading) return <div className="text-center py-5">กำลังโหลดข้อมูล...</div>;
 
     let displayOrders = orders;
     let title = "รายงานคำสั่งซื้อทั้งหมด";
 
-    if (roundId) {
-        displayOrders = orders.filter(o => o.roundId === Number(roundId));
+    if (roundId && roundId !== '0') {
+        // orders are already filtered by backend
         const r = rounds.find(r => r.id === Number(roundId));
         if (r) title = `รายงานคำสั่งซื้อ - ${r.roundName}`;
     }

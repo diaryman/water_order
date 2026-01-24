@@ -2,19 +2,35 @@
 
 import { useState, useEffect } from 'react';
 import { getAdminOrders, updateOrderStatus, deleteOrder } from '../actions';
+import { getRounds } from '@/app/actions';
 
 export default function AdminOrdersPage() {
     const [orders, setOrders] = useState<any[]>([]);
+    const [rounds, setRounds] = useState<any[]>([]);
+    const [selectedRound, setSelectedRound] = useState<string>('0');
     const [previewSlip, setPreviewSlip] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
 
     async function loadData() {
-        const data = await getAdminOrders();
-        setOrders(data);
+        setLoading(true);
+        try {
+            const rId = Number(selectedRound);
+            const [ordersData, roundsData] = await Promise.all([
+                getAdminOrders(rId),
+                getRounds() // Ensure getRounds is exported from actions
+            ]);
+            setOrders(ordersData);
+            setRounds(roundsData);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
     }
 
     useEffect(() => {
         loadData();
-    }, []);
+    }, [selectedRound]);
 
     async function handleStatus(id: number, status: string) {
         if (!confirm('ยืนยันเปลี่ยนสถานะ?')) return;
@@ -30,9 +46,30 @@ export default function AdminOrdersPage() {
 
     return (
         <div className="container-fluid px-4 py-4 text-dark">
-            <div className="d-flex justify-content-between align-items-center mb-4">
-                <h2 className="fw-bold"><i className="bi bi-cart-check text-primary me-2"></i>รายการคำสั่งซื้อทั้งหมด</h2>
-                <a href="/admin/orders/print" target="_blank" className="btn btn-outline-secondary">
+            <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                <div className="d-flex align-items-center gap-3">
+                    <h2 className="fw-bold m-0">
+                        <i className="bi bi-cart-check text-primary me-2"></i>รายการคำสั่งซื้อ
+                    </h2>
+                    <select
+                        className="form-select w-auto"
+                        value={selectedRound}
+                        onChange={(e) => setSelectedRound(e.target.value)}
+                    >
+                        <option value="0">--- ทั้งหมด (All) ---</option>
+                        {rounds.map(r => (
+                            <option key={r.id} value={r.id}>
+                                {r.roundName} {r.isActive ? '(เปิดรับ)' : ''}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <a
+                    href={`/admin/orders/print?roundId=${selectedRound}`}
+                    target="_blank"
+                    className="btn btn-outline-secondary"
+                >
                     <i className="bi bi-printer me-2"></i>พิมพ์รายงาน
                 </a>
             </div>
@@ -43,6 +80,7 @@ export default function AdminOrdersPage() {
                         <thead className="table-light">
                             <tr>
                                 <th className="ps-3">วันที่/เวลา</th>
+                                <th>รอบการสั่งซื้อ</th>
                                 <th>ผู้สั่งซื้อ / กลุ่มงาน</th>
                                 <th>รายการสินค้า</th>
                                 <th className="text-end">ยอดรวม</th>
@@ -57,6 +95,13 @@ export default function AdminOrdersPage() {
                                     <td className="ps-3">
                                         <div className="fw-bold">{new Date(order.createdAt).toLocaleDateString('th-TH')}</div>
                                         <div className="text-muted" style={{ fontSize: '0.75rem' }}>{new Date(order.createdAt).toLocaleTimeString('th-TH')}</div>
+                                    </td>
+                                    <td>
+                                        {order.round ? (
+                                            <span className="badge bg-light text-dark border">
+                                                {order.round.roundName}
+                                            </span>
+                                        ) : <span className="text-muted">-</span>}
                                     </td>
                                     <td>
                                         <div className="fw-bold">{order.member.name}</div>
@@ -113,7 +158,7 @@ export default function AdminOrdersPage() {
                                 </tr>
                             ))}
                             {orders.length === 0 && (
-                                <tr><td colSpan={7} className="text-center py-5 text-muted">ไม่พบรายการสั่งซื้อ</td></tr>
+                                <tr><td colSpan={8} className="text-center py-5 text-muted">ไม่พบรายการสั่งซื้อ</td></tr>
                             )}
                         </tbody>
                     </table>
