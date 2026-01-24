@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  app:
+    container_name: water-ordering-system
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=file:/app/prisma/dev.db
+    volumes:
+      # Persist SQLite database
+      - ./prisma/dev.db:/app/prisma/dev.db
+      # Persist uploads (slips/QR)
+      - ./public/uploads:/app/public/uploads
