@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Group {
+  id      Int      @id @default(autoincrement())
+  name    String
+  members Member[]
+}
+
+model Member {
+  id      Int     @id @default(autoincrement())
+  name    String
+  groupId Int
+  group   Group   @relation(fields: [groupId], references: [id])
+  orders  Order[]
+}
+
+model Product {
+  id         Int         @id @default(autoincrement())
+  name       String
+  price      Float
+  type       String      // "SMALL", "LARGE"
+  image      String?
+  orderItems OrderItem[]
+  isAvailable Boolean    @default(true)
+}
+
+model PaymentMethod {
+  id            Int     @id @default(autoincrement())
+  bankName      String
+  accountName   String
+  accountNumber String
+  qrCodeUrl     String?
+  isActive      Boolean @default(true)
+}
+
+
+model OrderRound {
+  id              Int      @id @default(autoincrement())
+  roundName       String
+  startDate       DateTime?
+  endDate         DateTime?
+  isActive        Boolean  @default(false) // Current active round
+  isAcceptingOrders Boolean @default(false)
+  orders          Order[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Order {
+  id        Int         @id @default(autoincrement())
+  memberId  Int
+  member    Member      @relation(fields: [memberId], references: [id])
+  roundId   Int?
+  round     OrderRound? @relation(fields: [roundId], references: [id])
+  total     Float
+  status    String      // "PENDING", "PAID", "COMPLETED"
+  slipUrl   String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  items     OrderItem[]
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Float
+}
