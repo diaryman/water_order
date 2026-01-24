@@ -16,9 +16,10 @@ export async function login(prevState: any, formData: FormData) {
         const cookieStore = await cookies()
         cookieStore.set(COOKIE_NAME, 'true', {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            secure: false, // process.env.NODE_ENV === 'production', // Disable secure cookie for internal HTTP usage
             maxAge: 60 * 60 * 24,
             path: '/',
+            sameSite: 'lax',
         })
         redirect('/admin/dashboard')
     } else {
