@@ -141,3 +141,18 @@ pm2 save
 - `prisma/schema.prisma`: โครงสร้างฐานข้อมูล
 - `docker-compose.yml`: การตั้งค่า Docker Environment
 - `public/uploads`: โฟลเดอร์เก็บรูปสลิปและ QR Code
+
+---
+
+## การแก้ไขปัญหาเบื้องต้น (Troubleshooting)
+
+### 1. Application Error (Server-side exception)
+หากรันแล้วเจอปัญหา `Application error: a server-side exception has occurred` ให้ลองตรวจสอบ Logs ด้วยคำสั่ง:
+```bash
+docker logs water-ordering-system
+```
+
+### 2. ปัญหา Database
+หากพบ Error เกี่ยวกับ database หรือ "file not found":
+- ตรวจสอบว่าในเครื่อง Server มีไฟล์ `prisma/dev.db` อยู่จริง
+- **ระวัง**: หากไม่มีไฟล์นี้ Docker อาจจะสร้าง `dev.db` เป็น "โฟลเดอร์" แทน ซึ่งจะทำให้ระบบพัง ให้ลบโฟลเดอร์ `prisma/dev.db` ทิ้ง แล้วสร้างไฟล์เปล่าๆ หรือก๊อปปี้จากเครื่อง local ไปวางแทน
