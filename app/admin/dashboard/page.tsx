@@ -64,6 +64,12 @@ export default function AdminDashboard() {
 
     return (
         <div className="container py-4">
+            {/* Organization Header */}
+            <div className="text-center mb-4">
+                <h1 className="fw-bold text-primary mb-1">ระบบสั่งน้ำดื่ม - แดชบอร์ด</h1>
+                <p className="text-muted small">สวัสดิการสำนักวิทยาการสารสนเทศ สำนักงานศาลปกครอง</p>
+            </div>
+
             <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
                 <h2 className="text-primary m-0">
                     <i className="bi bi-speedometer2 me-2"></i>ภาพรวมระบบ (Dashboard)

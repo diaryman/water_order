@@ -16,7 +16,8 @@ export default function AdminLogin() {
                 <div className="text-center mb-4">
                     <i className="bi bi-shield-lock-fill display-1 text-primary"></i>
                     <h3 className="mt-3">ผู้ดูแลระบบ</h3>
-                    <p className="text-muted">กรุณาเข้าสู่ระบบเพื่อจัดการข้อมูล</p>
+                    <p className="text-muted mb-1">สวัสดิการสำนักวิทยาการสารสนเทศ สำนักงานศาลปกครอง</p>
+                    <p className="text-muted small">กรุณาเข้าสู่ระบบเพื่อจัดการข้อมูล</p>
                 </div>
 
                 <form action={formAction}>

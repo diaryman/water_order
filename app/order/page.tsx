@@ -73,6 +73,12 @@ export default function OrderPage() {
     if (step === 1) {
         return (
             <div className="container py-5">
+                {/* Organization Header */}
+                <div className="text-center mb-5">
+                    <h1 className="fw-bold text-primary mb-2">ระบบสั่งน้ำดื่ม</h1>
+                    <p className="text-muted">สวัสดิการสำนักวิทยาการสารสนเทศ สำนักงานศาลปกครอง</p>
+                </div>
+
                 <div className="row justify-content-center">
                     <div className="col-md-6 text-center">
                         <h2 className="mb-4">ระบุผู้สั่งซื้อ</h2>

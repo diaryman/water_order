@@ -14,8 +14,8 @@ const prompt = Prompt({
 });
 
 export const metadata: Metadata = {
-  title: "ระบบสั่งซื้อน้ำดื่ม (Water2)",
-  description: "ระบบสั่งซื้อน้ำดื่มสำหรับสำนักงาน",
+  title: "ระบบสั่งน้ำดื่ม - สำนักวิทยาการสารสนเทศ",
+  description: "สวัสดิการสำนักวิทยาการสารสนเทศ สำนักงานศาลปกครอง",
 };
 
 export default function RootLayout({

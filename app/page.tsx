@@ -9,6 +9,12 @@ export default async function Home() {
 
   return (
     <div className="container py-5">
+      {/* Organization Header */}
+      <div className="text-center mb-5">
+        <h1 className="fw-bold text-primary mb-2">ระบบสั่งน้ำดื่ม</h1>
+        <p className="text-muted">สวัสดิการสำนักวิทยาการสารสนเทศ สำนักงานศาลปกครอง</p>
+      </div>
+
       {/* Round Status Banner */}
       {round ? (
         <div className={`alert ${round.isAcceptingOrders ? 'alert-info' : 'alert-warning'} border-0 shadow-sm mb-5 d-flex justify-content-between align-items-center p-4`}>
@@ -80,7 +86,7 @@ export default async function Home() {
                   </td>
                   <td className="text-end pe-4">
                     <span className={`badge rounded-pill ${order.status === 'PENDING' ? 'bg-warning text-dark' :
-                        order.status === 'PAID' ? 'bg-info text-white' : 'bg-success'
+                      order.status === 'PAID' ? 'bg-info text-white' : 'bg-success'
                       }`} style={{ fontSize: '0.65rem' }}>
                       {order.status === 'PENDING' ? 'รอตรวจสอบ' :
                         order.status === 'PAID' ? 'ชำระแล้ว' : 'สำเร็จ'}
