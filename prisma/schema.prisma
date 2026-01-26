@@ -77,3 +77,11 @@ model OrderItem {
   quantity  Int
   price     Float
 }
+
+model Admin {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

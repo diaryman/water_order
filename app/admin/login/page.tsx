@@ -16,18 +16,27 @@ export default function AdminLogin() {
                 <div className="text-center mb-4">
                     <i className="bi bi-shield-lock-fill display-1 text-primary"></i>
                     <h3 className="mt-3">ผู้ดูแลระบบ</h3>
-                    <p className="text-muted">กรุณากรอกรหัสผ่านเพื่อเข้าใช้งาน</p>
+                    <p className="text-muted">กรุณาเข้าสู่ระบบเพื่อจัดการข้อมูล</p>
                 </div>
 
                 <form action={formAction}>
+                    <div className="mb-3">
+                        <input
+                            type="text"
+                            name="username"
+                            className="form-control form-control-lg"
+                            placeholder="ชื่อผู้ใช้ (Username)"
+                            required
+                            autoFocus
+                        />
+                    </div>
                     <div className="mb-4">
                         <input
                             type="password"
-                            name="passcode"
-                            className="form-control form-control-lg text-center"
-                            placeholder="รหัสผ่าน (Passcode)"
+                            name="password"
+                            className="form-control form-control-lg"
+                            placeholder="รหัสผ่าน (Password)"
                             required
-                            autoFocus
                         />
                     </div>
                     {state?.error && <div className="alert alert-danger text-center">{state.error}</div>}

@@ -3,28 +3,52 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
+import { SignJWT, jwtVerify } from 'jose'
 
 const prisma = new PrismaClient()
-const ADMIN_PASSCODE = 'Admin1234'
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret-key-change-this-in-prod')
 const COOKIE_NAME = 'admin_session'
 
 // Authentication
 export async function login(prevState: any, formData: FormData) {
-    const passcode = formData.get('passcode') as string
+    const username = formData.get('username') as string // Changed from passcode to username
+    const password = formData.get('password') as string // Changed from passcode to password
 
-    if (passcode === ADMIN_PASSCODE) {
+    if (!username || !password) {
+        return { error: 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน' }
+    }
+
+    try {
+        const admin = await prisma.admin.findUnique({
+            where: { username }
+        })
+
+        if (!admin || !bcrypt.compareSync(password, admin.passwordHash)) {
+            return { error: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' }
+        }
+
+        // Create JWT
+        const token = await new SignJWT({ id: admin.id, username: admin.username })
+            .setProtectedHeader({ alg: 'HS256' })
+            .setIssuedAt()
+            .setExpirationTime('24h')
+            .sign(JWT_SECRET)
+
         const cookieStore = await cookies()
-        cookieStore.set(COOKIE_NAME, 'true', {
+        cookieStore.set(COOKIE_NAME, token, {
             httpOnly: true,
-            secure: false, // process.env.NODE_ENV === 'production', // Disable secure cookie for internal HTTP usage
+            secure: process.env.NODE_ENV === 'production',
             maxAge: 60 * 60 * 24,
             path: '/',
             sameSite: 'lax',
         })
-        redirect('/admin/dashboard')
-    } else {
-        return { error: 'รหัสผ่านไม่ถูกต้อง' }
+    } catch (error) {
+        console.error("Login error:", error)
+        return { error: 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ' }
     }
+
+    redirect('/admin/dashboard')
 }
 
 export async function logout() {
@@ -35,7 +59,16 @@ export async function logout() {
 
 export async function checkAuth() {
     const cookieStore = await cookies()
-    return cookieStore.has(COOKIE_NAME)
+    const token = cookieStore.get(COOKIE_NAME)?.value
+
+    if (!token) return false
+
+    try {
+        const { payload } = await jwtVerify(token, JWT_SECRET)
+        return !!payload
+    } catch (err) {
+        return false
+    }
 }
 
 
