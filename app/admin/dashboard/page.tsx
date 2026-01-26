@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getDashboardStats } from '../actions';
+import { getDashboardStats } from '@/app/admin/actions';
 import { getRounds } from '@/app/actions';
 
 // Define types for our data

@@ -359,14 +359,23 @@ export async function uploadFile(formData: FormData) {
 }
 
 export const uploadSlip = uploadFile; // Alias for backward compatibility
-export async function getDashboardStats() {
+// Get dashboard stats with optional round filtering
+export async function getDashboardStats(roundId?: number) {
+    const whereClause: any = {};
+    if (roundId && roundId > 0) {
+        whereClause.roundId = roundId;
+    }
+
     // 1. Basic Counts
     const totalMembers = await prisma.member.count();
-    const totalOrders = await prisma.order.count();
+    const totalOrders = await prisma.order.count({ where: whereClause });
 
     // 2. Revenue & Water Counts
     // We need to aggregate from items for precise product type counts
     const allItems = await prisma.orderItem.findMany({
+        where: {
+            order: whereClause
+        },
         include: { product: true }
     });
 
@@ -375,13 +384,14 @@ export async function getDashboardStats() {
     let totalLarge = 0;
 
     allItems.forEach((item: any) => {
-        totalRevenue += item.price * item.quantity; // Or use item.price matches order total logic
+        totalRevenue += item.price * item.quantity;
         if (item.product.type === 'SMALL') totalSmall += item.quantity;
         if (item.product.type === 'LARGE') totalLarge += item.quantity;
     });
 
     // 3. Recent Orders
     const recentOrders = await prisma.order.findMany({
+        where: whereClause,
         take: 10,
         orderBy: { createdAt: 'desc' },
         include: {
@@ -390,9 +400,9 @@ export async function getDashboardStats() {
         }
     });
 
-    // 4. Top Groups (Calculate manually for SQLite compatibility)
-    // Fetch all orders with their group info
+    // 4. Top Groups
     const ordersWithGroup = await prisma.order.findMany({
+        where: whereClause,
         include: {
             member: { include: { group: true } }
         }
