@@ -1,38 +1,37 @@
 import { z } from 'zod';
 
 export const LoginSchema = z.object({
-    username: z.string().min(1, "Username is required"),
-    password: z.string().min(1, "Password is required")
+    username: z.string().min(1, 'กรุณากรอกชื่อผู้ใช้'),
+    password: z.string().min(1, 'กรุณากรอกรหัสผ่าน')
 });
 
 export const CreateGroupSchema = z.object({
-    name: z.string().min(1, "Group name is required")
+    name: z.string().min(1, 'กรุณากรอกชื่อกลุ่ม')
 });
 
 export const CreateMemberSchema = z.object({
-    name: z.string().min(1, "Member name is required"),
-    groupId: z.number().int().positive("Invalid group ID")
+    name: z.string().min(1, 'กรุณากรอกชื่อสมาชิก'),
+    groupId: z.number().int().positive('กรุณาเลือกกลุ่ม')
 });
 
 export const CreateProductSchema = z.object({
-    name: z.string().min(1, "Product name is required"),
-    price: z.number().min(0, "Price must be non-negative"),
-    type: z.enum(['SMALL', 'LARGE']),
+    name: z.string().min(1, 'กรุณากรอกชื่อสินค้า'),
+    price: z.number().min(0, 'ราคาต้องมากกว่าหรือเท่ากับ 0'),
+    type: z.enum(['SMALL', 'LARGE'], { message: 'กรุณาเลือกประเภทสินค้า' }),
     isAvailable: z.boolean().optional().default(true)
 });
 
 export const CreateRoundSchema = z.object({
-    name: z.string().min(1, "Round name is required")
+    name: z.string().min(1, 'กรุณากรอกชื่อรอบ')
 });
 
 export const CreateOrderSchema = z.object({
-    memberId: z.number().int().positive("Invalid Member ID"),
+    memberId: z.number().int().positive('กรุณาเลือกสมาชิก'),
     items: z.array(z.object({
-        productId: z.number().int().positive(),
-        quantity: z.number().int().min(1),
-        price: z.number().min(0) // Validate price consistency? Or trust it? Better to trust provided price or re-fetch?
-        // Usually we fetch price from DB, but for now we validate the input structure.
-    })).min(1, "At least one item is required"),
-    total: z.number().min(0),
-    slipUrl: z.string().optional()
+        productId: z.number().int().positive('รหัสสินค้าไม่ถูกต้อง'),
+        quantity: z.number().int().min(1, 'จำนวนต้องมากกว่า 0'),
+        price: z.number().min(0, 'ราคาไม่ถูกต้อง')
+    })).min(1, 'กรุณาเลือกสินค้าอย่างน้อย 1 รายการ'),
+    total: z.number().min(0, 'ยอดรวมไม่ถูกต้อง'),
+    slipUrl: z.string().min(1, 'กรุณาอัพโหลดสลิปการชำระเงิน').optional()
 });

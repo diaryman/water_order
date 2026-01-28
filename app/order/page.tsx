@@ -213,14 +213,66 @@ export default function OrderPage() {
 
 
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files?.[0]) {
-            setSelectedSlip(e.target.files[0]);
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validate file type
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+        if (!validTypes.includes(file.type)) {
+            error('ประเภทไฟล์ไม่ถูกต้อง (รองรับเฉพาะ JPG, PNG)');
+            e.target.value = ''; // Reset input
+            return;
+        }
+
+        // Validate file size (5MB max)
+        const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+        if (file.size > maxSize) {
+            error('ไฟล์มีขนาดใหญ่เกินไป (สูงสุด 5 MB)');
+            e.target.value = '';
+            return;
+        }
+
+        // Validate image dimensions
+        try {
+            const img = new Image();
+            const objectUrl = URL.createObjectURL(file);
+
+            img.onload = () => {
+                URL.revokeObjectURL(objectUrl);
+
+                if (img.width < 200 || img.height < 200) {
+                    error('ขนาดภาพเล็กเกินไป (ต้องไม่น้อยกว่า 200x200 พิกเซล)');
+                    e.target.value = '';
+                    return;
+                }
+
+                // All validations passed
+                setSelectedSlip(file);
+                success('อัพโหลดสลิปสำเร็จ');
+            };
+
+            img.onerror = () => {
+                URL.revokeObjectURL(objectUrl);
+                error('ไม่สามารถอ่านไฟล์ภาพได้ กรุณาลองใหม่');
+                e.target.value = '';
+            };
+
+            img.src = objectUrl;
+        } catch (err) {
+            error('เกิดข้อผิดพลาดในการตรวจสอบไฟล์');
+            e.target.value = '';
         }
     };
 
     const handleFinalSubmit = async () => {
         if (!selectedMemberId || totalItems === 0) return;
+
+        // Validate slip is uploaded
+        if (!selectedSlip) {
+            error('กรุณาอัพโหลดสลิปการชำระเงินก่อนยืนยัน');
+            return;
+        }
 
         setIsSubmitting(true);
         try {
@@ -230,6 +282,10 @@ export default function OrderPage() {
                 const formData = new FormData();
                 formData.append('file', selectedSlip);
                 slipUrl = await uploadSlip(formData);
+
+                if (!slipUrl) {
+                    throw new Error('ไม่สามารถอัพโหลดสลิปได้ กรุณาลองใหม่');
+                }
             }
 
             const items = Object.entries(cart)
@@ -345,7 +401,7 @@ export default function OrderPage() {
                                             />
                                             <label className="input-group-text" htmlFor="slipUpload"><i className="bi bi-upload"></i></label>
                                         </div>
-                                        <p className="text-muted smallest mt-1" style={{ fontSize: '0.7rem' }}>* สามารถข้ามขั้นตอนนี้และส่งให้แอดมินภายหลังได้</p>
+                                        <p className="text-muted smallest mt-1" style={{ fontSize: '0.7rem' }}>* จำเป็นต้องแนบสลิปโอนเงินก่อนยืนยันสั่งซื้อ (JPG/PNG สูงสุด 5MB)</p>
                                     </div>
                                 </div>
                             </div>
