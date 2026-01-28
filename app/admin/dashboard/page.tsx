@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { getDashboardStats } from '@/app/admin/actions';
 import { getRounds } from '@/app/actions';
+import SearchFilter from '@/app/admin/components/SearchFilter';
 
 // Define types for our data
 type DashboardData = {
@@ -21,6 +23,36 @@ export default function AdminDashboard() {
     const [rounds, setRounds] = useState<any[]>([]);
     const [selectedRound, setSelectedRound] = useState<string>('0');
     const [loading, setLoading] = useState(true);
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+    const searchParams = useSearchParams();
+    const search = searchParams.get('search') || undefined;
+    const status = searchParams.get('status') || undefined;
+
+    const handleExport = () => {
+        if (!data?.recentOrders) return;
+        const headers = ["Order ID", "Member", "Group", "Total", "Status", "Date", "Slip URL"];
+        const rows = data.recentOrders.map(o => [
+            o.id,
+            `"${o.member.name}"`,
+            `"${o.member.group.name}"`,
+            o.total,
+            o.status,
+            `${new Date(o.createdAt).toLocaleDateString("th-TH")} ${new Date(o.createdAt).toLocaleTimeString("th-TH")}`,
+            o.slipUrl ? `"https://${window.location.host}${o.slipUrl}"` : ""
+        ]);
+
+        const csvContent = "data:text/csv;charset=utf-8,\uFEFF"
+            + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `orders_export_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     // Fetch data on component mount or round change
     useEffect(() => {
@@ -29,7 +61,7 @@ export default function AdminDashboard() {
             try {
                 const rID = Number(selectedRound);
                 const [stats, roundsData] = await Promise.all([
-                    getDashboardStats(rID),
+                    getDashboardStats(rID, search, status),
                     getRounds()
                 ]);
                 setData(stats);
@@ -41,7 +73,7 @@ export default function AdminDashboard() {
             }
         }
         load();
-    }, [selectedRound]);
+    }, [selectedRound, search, status]);
 
     if (loading) {
         return (
@@ -146,6 +178,70 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
+            {/* Quick Links */}
+            <h5 className="mb-3 text-muted fw-bold small text-uppercase">เมนูจัดการข้อมูล</h5>
+            <div className="row g-3 mb-5">
+                <div className="col-6 col-md-3 col-lg-2">
+                    <a href="/admin/rounds" className="text-decoration-none">
+                        <div className="card shadow-sm border-0 h-100 text-center py-3 hover-shadow transition">
+                            <i className="bi bi-clock-history display-6 text-primary mb-2"></i>
+                            <div className="small fw-bold text-dark">รอบสั่งซื้อ</div>
+                        </div>
+                    </a>
+                </div>
+                <div className="col-6 col-md-3 col-lg-2">
+                    <a href="/admin/orders" className="text-decoration-none">
+                        <div className="card shadow-sm border-0 h-100 text-center py-3 hover-shadow transition">
+                            <i className="bi bi-receipt display-6 text-success mb-2"></i>
+                            <div className="small fw-bold text-dark">รายการสั่งซื้อ</div>
+                        </div>
+                    </a>
+                </div>
+                <div className="col-6 col-md-3 col-lg-2">
+                    <a href="/admin/members" className="text-decoration-none">
+                        <div className="card shadow-sm border-0 h-100 text-center py-3 hover-shadow transition">
+                            <i className="bi bi-people display-6 text-info mb-2"></i>
+                            <div className="small fw-bold text-dark">สมาชิก/กลุ่ม</div>
+                        </div>
+                    </a>
+                </div>
+                <div className="col-6 col-md-3 col-lg-2">
+                    <a href="/admin/products" className="text-decoration-none">
+                        <div className="card shadow-sm border-0 h-100 text-center py-3 hover-shadow transition">
+                            <i className="bi bi-box-seam display-6 text-warning mb-2"></i>
+                            <div className="small fw-bold text-dark">สินค้า</div>
+                        </div>
+                    </a>
+                </div>
+                <div className="col-6 col-md-3 col-lg-2">
+                    <a href="/admin/payments" className="text-decoration-none">
+                        <div className="card shadow-sm border-0 h-100 text-center py-3 hover-shadow transition">
+                            <i className="bi bi-wallet2 display-6 text-danger mb-2"></i>
+                            <div className="small fw-bold text-dark">การชำระเงิน</div>
+                        </div>
+                    </a>
+                </div>
+                <div className="col-6 col-md-3 col-lg-2">
+                    <a href="/admin/logs" className="text-decoration-none">
+                        <div className="card shadow-sm border-0 h-100 text-center py-3 hover-shadow transition">
+                            <i className="bi bi-journal-text display-6 text-secondary mb-2"></i>
+                            <div className="small fw-bold text-dark">บันทึกกิจกรรม</div>
+                        </div>
+                    </a>
+                </div>
+                <div className="col-6 col-md-3 col-lg-2">
+                    <a href="/" target="_blank" className="text-decoration-none">
+                        <div className="card shadow-sm border-0 h-100 text-center py-3 hover-shadow transition bg-light">
+                            <i className="bi bi-box-arrow-up-right display-6 text-secondary mb-2"></i>
+                            <div className="small fw-bold text-dark">หน้าเว็บไซต์</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            {/* Search Filter */}
+            <SearchFilter showStatus={true} placeholder="ค้นหาชื่อ, เลขออเดอร์..." />
+
             <div className="row g-4">
                 {/* Recent Orders */}
                 <div className="col-md-8">
@@ -155,6 +251,9 @@ export default function AdminDashboard() {
                                 <i className="bi bi-clock-history me-2 text-primary"></i>
                                 รายการสั่งซื้อล่าสุด
                             </h5>
+                            <button className="btn btn-sm btn-outline-success" onClick={handleExport}>
+                                <i className="bi bi-file-earmark-excel me-1"></i> Export CSV
+                            </button>
                         </div>
                         <div className="card-body p-0">
                             <div className="table-responsive">
@@ -164,6 +263,7 @@ export default function AdminDashboard() {
                                             <th>#</th>
                                             <th>ผู้สั่ง</th>
                                             <th>ยอดเงิน</th>
+                                            <th>สลิป</th>
                                             <th>สถานะ</th>
                                             <th>เวลา</th>
                                         </tr>
@@ -178,6 +278,16 @@ export default function AdminDashboard() {
                                                         <small className="text-muted">{order.member.group.name}</small>
                                                     </td>
                                                     <td>฿{order.total.toLocaleString()}</td>
+                                                    <td>
+                                                        {order.slipUrl ? (
+                                                            <button
+                                                                className="btn btn-sm btn-outline-secondary"
+                                                                onClick={() => setPreviewImage(order.slipUrl)}
+                                                            >
+                                                                <i className="bi bi-image"></i>
+                                                            </button>
+                                                        ) : <span className="text-muted">-</span>}
+                                                    </td>
                                                     <td>
                                                         <span className={`badge ${order.status === 'PAID' ? 'bg-success' :
                                                             order.status === 'PENDING' ? 'bg-warning text-dark' :
@@ -244,6 +354,30 @@ export default function AdminDashboard() {
                     </div>
                 </div>
             </div>
-        </div>
+
+            {/* Image Preview Modal */}
+            {
+                previewImage && (
+                    <div
+                        className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
+                        style={{ backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 1050 }}
+                        onClick={() => setPreviewImage(null)}
+                    >
+                        <div className="position-relative" style={{ maxWidth: '90%', maxHeight: '90%' }}>
+                            <button
+                                className="btn btn-close btn-close-white position-absolute top-0 end-0 m-3"
+                                onClick={() => setPreviewImage(null)}
+                            ></button>
+                            <img
+                                src={previewImage}
+                                alt="Slip Preview"
+                                className="img-fluid rounded"
+                                style={{ maxHeight: '85vh' }}
+                            />
+                        </div>
+                    </div>
+                )
+            }
+        </div >
     );
 }

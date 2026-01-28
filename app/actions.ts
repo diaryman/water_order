@@ -2,6 +2,7 @@
 
 import { PrismaClient } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
+import { CreateOrderSchema } from '@/lib/schemas';
 
 const prisma = new PrismaClient()
 
@@ -76,6 +77,12 @@ export async function createOrder(data: {
     total: number,
     slipUrl?: string
 }) {
+    // Validate Input
+    const validation = CreateOrderSchema.safeParse(data);
+    if (!validation.success) {
+        throw new Error(validation.error.issues[0].message);
+    }
+
     const activeRound = await getCurrentRound()
 
     if (!activeRound || !activeRound.isAcceptingOrders) {
@@ -147,4 +154,18 @@ export async function getTodaySummary() {
     })
 
     return { orders, totalSmall, totalLarge, totalPrice }
+}
+
+export async function getMemberOrders(memberId: number) {
+    return await prisma.order.findMany({
+        where: { memberId },
+        include: {
+            items: {
+                include: { product: true }
+            },
+            round: true
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 20 // Limit to last 20 orders
+    })
 }

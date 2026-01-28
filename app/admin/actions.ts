@@ -1,10 +1,12 @@
 'use server'
 
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import { SignJWT, jwtVerify } from 'jose'
+import { LoginSchema, CreateGroupSchema, CreateMemberSchema, CreateProductSchema } from '@/lib/schemas';
+import { checkRateLimit } from '@/lib/ratelimit';
 
 const prisma = new PrismaClient()
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret-key-change-this-in-prod')
@@ -12,11 +14,17 @@ const COOKIE_NAME = 'admin_session'
 
 // Authentication
 export async function login(prevState: any, formData: FormData) {
+    const headerStore = await headers()
+    const ip = headerStore.get('x-forwarded-for') || 'unknown'
+    if (!checkRateLimit(ip)) {
+        return { error: 'ทำรายการถี่เกินไป กรุณารอสักครู่ (Rate Limit)' }
+    }
     const username = formData.get('username') as string // Changed from passcode to username
     const password = formData.get('password') as string // Changed from passcode to password
 
-    if (!username || !password) {
-        return { error: 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน' }
+    const validation = LoginSchema.safeParse({ username, password });
+    if (!validation.success) {
+        return { error: validation.error.issues[0].message }
     }
 
     try {
@@ -43,6 +51,17 @@ export async function login(prevState: any, formData: FormData) {
             path: '/',
             sameSite: 'lax',
         })
+        try {
+            await prisma.auditLog.create({
+                data: {
+                    action: 'LOGIN',
+                    details: `User: ${username}`,
+                    ip: ip
+                }
+            });
+        } catch (e) {
+            console.error("Audit Log Error:", e);
+        }
     } catch (error) {
         console.error("Login error:", error)
         return { error: 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ' }
@@ -81,6 +100,8 @@ export async function getGroups() {
 }
 
 export async function createGroup(name: string) {
+    const validation = CreateGroupSchema.safeParse({ name });
+    if (!validation.success) return { error: validation.error.issues[0].message };
     const existing = await prisma.group.findFirst({
         where: { name }
     })
@@ -92,6 +113,19 @@ export async function createGroup(name: string) {
     await prisma.group.create({
         data: { name }
     })
+    try {
+        const headerStore = await headers()
+        const ip = headerStore.get('x-forwarded-for') || 'unknown'
+        await prisma.auditLog.create({
+            data: {
+                action: 'CREATE_GROUP',
+                details: `Name: ${name}`,
+                ip: ip
+            }
+        });
+    } catch (e) {
+        console.error("Audit Log Error:", e);
+    }
 
     return { success: true }
 }
@@ -146,6 +180,8 @@ export async function deleteGroup(id: number) {
 }
 
 export async function createMember(name: string, groupId: number) {
+    const validation = CreateMemberSchema.safeParse({ name, groupId });
+    if (!validation.success) return { error: validation.error.issues[0].message };
     // Check duplicates
     const existing = await prisma.member.findFirst({
         where: { name, groupId }
@@ -158,6 +194,19 @@ export async function createMember(name: string, groupId: number) {
     await prisma.member.create({
         data: { name, groupId }
     })
+    try {
+        const headerStore = await headers()
+        const ip = headerStore.get('x-forwarded-for') || 'unknown'
+        await prisma.auditLog.create({
+            data: {
+                action: 'CREATE_MEMBER',
+                details: `Name: ${name}, GroupId: ${groupId}`,
+                ip: ip
+            }
+        });
+    } catch (e) {
+        console.error("Audit Log Error:", e);
+    }
 
     return { success: true }
 }
@@ -277,9 +326,26 @@ export async function getAdminProducts() {
 }
 
 export async function createProduct(name: string, price: number, type: string) {
+    // Note: type comes as string, Schema expects specific enum.
+    // We might need to cast or let Zod validate it.
+    const validation = CreateProductSchema.safeParse({ name, price, type: type as any });
+    if (!validation.success) return { error: validation.error.issues[0].message };
     await prisma.product.create({
         data: { name, price, type, isAvailable: true }
     })
+    try {
+        const headerStore = await headers()
+        const ip = headerStore.get('x-forwarded-for') || 'unknown'
+        await prisma.auditLog.create({
+            data: {
+                action: 'CREATE_PRODUCT',
+                details: `Name: ${name}, Price: ${price}`,
+                ip: ip
+            }
+        });
+    } catch (e) {
+        console.error("Audit Log Error:", e);
+    }
     return { success: true }
 }
 
@@ -353,6 +419,19 @@ export async function updateOrderStatus(id: number, status: string) {
         where: { id },
         data: { status }
     })
+    try {
+        const headerStore = await headers()
+        const ip = headerStore.get('x-forwarded-for') || 'unknown'
+        await prisma.auditLog.create({
+            data: {
+                action: 'UPDATE_ORDER_STATUS',
+                details: `Order: ${id}, Status: ${status}`,
+                ip: ip
+            }
+        });
+    } catch (e) {
+        console.error("Audit Log Error:", e);
+    }
 }
 
 export async function deleteOrder(id: number) {
@@ -392,11 +471,24 @@ export async function uploadFile(formData: FormData) {
 }
 
 export const uploadSlip = uploadFile; // Alias for backward compatibility
-// Get dashboard stats with optional round filtering
-export async function getDashboardStats(roundId?: number) {
+// Get dashboard stats with optional filtering
+export async function getDashboardStats(roundId?: number, search?: string, status?: string) {
     const whereClause: any = {};
     if (roundId && roundId > 0) {
         whereClause.roundId = roundId;
+    }
+
+    // Apply search filter to orders if provided
+    if (search) {
+        whereClause.OR = [
+            { member: { name: { contains: search } } },
+            { id: !isNaN(Number(search)) ? Number(search) : undefined }
+        ].filter(Boolean);
+    }
+
+    // Apply status filter
+    if (status && status !== 'ALL') {
+        whereClause.status = status;
     }
 
     // 1. Basic Counts
@@ -465,4 +557,35 @@ export async function getDashboardStats(roundId?: number) {
         recentOrders,
         topGroups
     };
+}
+
+export async function getAuditLogs(search?: string, date?: string) {
+    const where: any = {};
+
+    if (search) {
+        where.OR = [
+            { action: { contains: search } },
+            { details: { contains: search } },
+            { ip: { contains: search } }
+        ];
+    }
+
+    if (date) {
+        // Simple date string match (YYYY-MM-DD from input type='date')
+        // We'll look for logs created >= date 00:00 and < date+1 00:00
+        const startDate = new Date(date);
+        const endDate = new Date(date);
+        endDate.setDate(endDate.getDate() + 1);
+
+        where.createdAt = {
+            gte: startDate,
+            lt: endDate
+        };
+    }
+
+    return await prisma.auditLog.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        take: 100
+    });
 }

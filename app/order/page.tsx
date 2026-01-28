@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getGroups, getMembers, getProducts, getPaymentMethods, createOrder } from '../actions';
+import { useToast } from '@/app/components/ToastProvider';
 
 // Types
 type Group = { id: number; name: string };
@@ -13,6 +14,7 @@ type PaymentMethod = { id: number; bankName: string; accountName: string; accoun
 
 export default function OrderPage() {
     const router = useRouter();
+    const { success, error } = useToast();
     const [step, setStep] = useState(1);
     const [groups, setGroups] = useState<Group[]>([]);
     const [members, setMembers] = useState<Member[]>([]);
@@ -25,12 +27,25 @@ export default function OrderPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedSlip, setSelectedSlip] = useState<File | null>(null);
     const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+    const [createdOrder, setCreatedOrder] = useState<any>(null);
 
     // Load initial data
     useEffect(() => {
         getGroups().then(setGroups);
         getProducts().then(setProducts);
+
+        // Remember Me: Load from localStorage
+        const savedGroupId = localStorage.getItem('water_selectedGroupId');
+        const savedMemberId = localStorage.getItem('water_selectedMemberId');
+        if (savedGroupId) setSelectedGroupId(Number(savedGroupId));
+        if (savedMemberId) setSelectedMemberId(Number(savedMemberId));
     }, []);
+
+    // Remember Me: Save to localStorage
+    useEffect(() => {
+        if (selectedGroupId) localStorage.setItem('water_selectedGroupId', String(selectedGroupId));
+        if (selectedMemberId) localStorage.setItem('water_selectedMemberId', String(selectedMemberId));
+    }, [selectedGroupId, selectedMemberId]);
 
     useEffect(() => {
         if (step === 3) {
@@ -228,17 +243,18 @@ export default function OrderPage() {
                     };
                 });
 
-            await createOrder({
+            const order = await createOrder({
                 memberId: Number(selectedMemberId),
                 items,
                 total: calculateTotal(),
                 slipUrl: slipUrl ?? undefined
             });
+            setCreatedOrder(order);
 
             setStep(4); // Success step
-        } catch (error: any) {
-            alert(error.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่');
-            console.error(error);
+        } catch (err: any) {
+            error(err.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่');
+            console.error(err);
             setIsSubmitting(false);
         }
     };
@@ -363,7 +379,28 @@ export default function OrderPage() {
                 <div className="my-5">
                     <i className="bi bi-check-circle-fill text-success display-1 mb-4"></i>
                     <h1 className="mb-3">สั่งซื้อสำเร็จ!</h1>
-                    <p className="lead text-muted mb-5">ขอบคุณที่ใช้บริการ ระบบได้รับข้อมูลการสั่งซื้อของท่านเรียบร้อยแล้ว</p>
+                    <p className="lead text-muted mb-4">ขอบคุณที่ใช้บริการ ระบบได้รับข้อมูลการสั่งซื้อของท่านเรียบร้อยแล้ว</p>
+
+                    {createdOrder && (
+                        <div className="card card-custom p-4 mb-4 mx-auto shadow-sm text-start" style={{ maxWidth: '500px' }}>
+                            <h5 className="fw-bold border-bottom pb-2 mb-3">ข้อมูลการสั่งซื้อ #{createdOrder.id}</h5>
+                            <p className="mb-1"><strong>ผู้สั่ง:</strong> {members.find(m => m.id === Number(selectedMemberId))?.name}</p>
+                            <p className="mb-1"><strong>รายการ:</strong> {products.filter(p => cart[p.id] > 0).map(p => `${p.name} x${cart[p.id]}`).join(', ')}</p>
+                            <p className="mb-3"><strong>ยอดรวม:</strong> {createdOrder.total} บาท</p>
+
+                            <button
+                                className="btn btn-outline-primary btn-sm w-100"
+                                onClick={() => {
+                                    const text = `สั่งน้ำดื่ม\nออเดอร์ #${createdOrder.id}\nผู้สั่ง: ${members.find(m => m.id === Number(selectedMemberId))?.name}\nรายการ: ${products.filter(p => cart[p.id] > 0).map(p => `${p.name} x${cart[p.id]}`).join(', ')}\nยอดรวม: ${createdOrder.total} บาท\nขอบคุณครับ`;
+                                    navigator.clipboard.writeText(text);
+                                    success('คัดลอกข้อมูลเรียบร้อยแล้ว');
+                                }}
+                            >
+                                <i className="bi bi-clipboard me-1"></i> คัดลอกรายละเอียด
+                            </button>
+                        </div>
+                    )}
+
                     <Link href="/" className="btn btn-primary btn-custom btn-lg">
                         กลับหน้าหลัก
                     </Link>

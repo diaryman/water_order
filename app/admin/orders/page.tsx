@@ -150,6 +150,9 @@ export default function AdminOrdersPage() {
                                                     ส่งของ
                                                 </button>
                                             )}
+                                            <a href={`/admin/orders/${order.id}/print`} target="_blank" className="btn btn-sm btn-outline-secondary">
+                                                <i className="bi bi-printer"></i>
+                                            </a>
                                             <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(order.id)}>
                                                 <i className="bi bi-trash"></i>
                                             </button>
