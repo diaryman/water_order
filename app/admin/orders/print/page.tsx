@@ -35,13 +35,15 @@ function PrintContent() {
     if (loading) return <div className="text-center py-5">กำลังโหลดข้อมูล...</div>;
 
     let displayOrders = orders;
-    let title = "รายงานคำสั่งซื้อทั้งหมด";
+    let roundName = "ทุกรอบ";
 
     if (roundId && roundId !== '0') {
         // orders are already filtered by backend
         const r = rounds.find(r => r.id === Number(roundId));
-        if (r) title = `รายงานคำสั่งซื้อ - ${r.roundName}`;
+        if (r) roundName = r.roundName;
     }
+
+    const title = `สรุปคำสั่งซื้อน้ำดื่ม รอบ${roundName}`;
 
     return (
         <>

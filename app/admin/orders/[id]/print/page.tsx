@@ -27,9 +27,9 @@ export default async function PrintOrderPage(props: { params: Promise<{ id: stri
 
     return (
         <div className="container-fluid bg-white min-vh-100 p-4">
-            <div className="mx-auto border p-4" style={{ maxWidth: '210mm', minHeight: '297mm' }}>
+            <div className="mx-auto border p-4" style={{ maxWidth: '210mm', minHeight: '297mm', paddingTop: '3cm' }}>
                 {/* Header */}
-                <div className="text-center mb-4">
+                <div className="text-center mb-5">
                     <h3 className="fw-bold m-0">ใบเสร็จรับเงิน / ใบส่งของ</h3>
                     <p className="text-muted">สวัสดิการสำนักวิทยาการสารสนเทศ สำนักงานศาลปกครอง</p>
                 </div>
