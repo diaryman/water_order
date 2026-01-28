@@ -5,9 +5,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true
   },
-  serverActions: {
-    bodySizeLimit: '10mb' // Increase limit for file uploads
-  },
+
   async headers() {
     return [
       {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getDashboardStats } from '@/app/admin/actions';
 import { getRounds } from '@/app/actions';
@@ -17,7 +17,7 @@ type DashboardData = {
     topGroups: { name: string; total: number }[];
 };
 
-export default function AdminDashboard() {
+const DashboardContent = () => {
     // State for dashboard data
     const [data, setData] = useState<DashboardData | null>(null);
     const [rounds, setRounds] = useState<any[]>([]);
@@ -379,5 +379,19 @@ export default function AdminDashboard() {
                 )
             }
         </div >
+    );
+};
+
+export default function AdminDashboard() {
+    return (
+        <Suspense fallback={
+            <div className="d-flex justify-content-center align-items-center min-vh-100">
+                <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        }>
+            <DashboardContent />
+        </Suspense>
     );
 }
