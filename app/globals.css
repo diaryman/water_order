@@ -37,7 +37,43 @@ body {
   font-weight: 500;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-weight: 600;
   color: #2c3e50;
+}
+
+/* Print Styles */
+@media print {
+
+  /* Hide navigation, headers, footers, and buttons */
+  nav,
+  header,
+  footer,
+  .navbar,
+  .btn,
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Optimize page for printing */
+  body {
+    background: white;
+    color: black;
+  }
+
+  .card-custom {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+
+  /* Ensure content fits page */
+  @page {
+    margin: 1cm;
+  }
 }
