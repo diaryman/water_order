@@ -41,6 +41,21 @@ export default function RoundManager({ initialRounds }: { initialRounds: Round[]
         })
     }
 
+    const handleDelete = async (id: number, roundName: string) => {
+        if (!confirm(`ยืนยันลบรอบ "${roundName}"?
+หากรอบนี้มีคำสั่งซื้อจะไม่สามารถลบได้`)) return;
+
+        startTransition(async () => {
+            const { deleteRound } = await import('@/app/admin/actions');
+            const result = await deleteRound(id);
+            if (result.error) {
+                alert(result.error);
+            } else {
+                window.location.reload();
+            }
+        })
+    }
+
     return (
         <div className={styles.container}>
             <h1>จัดการรอบการสั่งซื้อ</h1>
@@ -76,6 +91,14 @@ export default function RoundManager({ initialRounds }: { initialRounds: Round[]
                                 className={styles.toggleBtn}
                             >
                                 {round.isAcceptingOrders ? 'ปิดรับ' : 'เปิดรับ'}
+                            </button>
+                            <button
+                                onClick={() => handleDelete(round.id, round.roundName)}
+                                disabled={isPending}
+                                className={styles.deleteBtn}
+                                title="ลบรอบ"
+                            >
+                                ลบ
                             </button>
                         </div>
                     </div>

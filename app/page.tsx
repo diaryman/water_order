@@ -48,14 +48,14 @@ export default async function Home() {
           <div className="card card-custom p-4 text-center border-0 shadow-sm h-100" style={{ background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)' }}>
             <i className="bi bi-droplet-fill text-primary display-3 mb-3"></i>
             <h2 className="fw-bold display-4">{summary.totalSmall}</h2>
-            <p className="text-muted fw-bold mb-0">น้ำแพ็คเล็ก (ขวด)</p>
+            <p className="text-muted fw-bold mb-0">น้ำแพ็คเล็ก (แพ็ค)</p>
           </div>
         </div>
         <div className="col-md-6">
           <div className="card card-custom p-4 text-center border-0 shadow-sm h-100" style={{ background: 'linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%)' }}>
             <i className="bi bi-bucket-fill text-info display-3 mb-3"></i>
             <h2 className="fw-bold display-4">{summary.totalLarge}</h2>
-            <p className="text-muted fw-bold mb-0">น้ำแพ็คใหญ่ (ขวด)</p>
+            <p className="text-muted fw-bold mb-0">น้ำแพ็คใหญ่ (แพ็ค)</p>
           </div>
         </div>
       </div>

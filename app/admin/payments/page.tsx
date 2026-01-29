@@ -8,10 +8,16 @@ export default function AdminPaymentMethodsPage() {
 
     // Form State
     const [showAddForm, setShowAddForm] = useState(false);
+    const [editingId, setEditingId] = useState<number | null>(null);
     const [bankName, setBankName] = useState('');
     const [accountName, setAccountName] = useState('');
     const [accountNumber, setAccountNumber] = useState('');
     const [qrCodeUrl, setQrCodeUrl] = useState('');
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+    // QR Modal State
+    const [showQrModal, setShowQrModal] = useState(false);
+    const [currentQrUrl, setCurrentQrUrl] = useState('');
 
     async function loadData() {
         const data = await getAdminPaymentMethods();
@@ -27,7 +33,16 @@ export default function AdminPaymentMethodsPage() {
         loadData();
     }
 
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+
+    function handleEdit(method: any) {
+        setEditingId(method.id);
+        setBankName(method.bankName);
+        setAccountName(method.accountName);
+        setAccountNumber(method.accountNumber);
+        setQrCodeUrl(method.qrCodeUrl || '');
+        setShowAddForm(true);
+    }
 
     async function handleAdd() {
         if (!bankName || !accountName || !accountNumber) return;
@@ -41,20 +56,38 @@ export default function AdminPaymentMethodsPage() {
             if (uploadedUrl) finalQrUrl = uploadedUrl;
         }
 
-        await createPaymentMethod(bankName, accountName, accountNumber, finalQrUrl);
+        if (editingId) {
+            // Update existing
+            const { updatePaymentMethod } = await import('../actions');
+            await updatePaymentMethod(editingId, bankName, accountName, accountNumber, finalQrUrl);
+        } else {
+            // Create new
+            await createPaymentMethod(bankName, accountName, accountNumber, finalQrUrl);
+        }
+
+        resetForm();
+        loadData();
+    }
+
+    function resetForm() {
         setBankName('');
         setAccountName('');
         setAccountNumber('');
         setQrCodeUrl('');
         setSelectedFile(null);
         setShowAddForm(false);
-        loadData();
+        setEditingId(null);
     }
 
     async function handleDelete(id: number) {
         if (!confirm('ยืนยันลบบัญชีธนาคารนี้?')) return;
         await deletePaymentMethod(id);
         loadData();
+    }
+
+    function showQr(url: string) {
+        setCurrentQrUrl(url);
+        setShowQrModal(true);
     }
 
     return (
@@ -68,7 +101,7 @@ export default function AdminPaymentMethodsPage() {
 
             {showAddForm && (
                 <div className="card card-custom p-4 mb-4 shadow-sm border-0 bg-white">
-                    <h5 className="fw-bold mb-3">เพิ่มบัญชีธนาคาร/พร้อมเพย์</h5>
+                    <h5 className="fw-bold mb-3">{editingId ? 'แก้ไขบัญชี' : 'เพิ่มบัญชีธนาคาร/พร้อมเพย์'}</h5>
                     <div className="row g-3">
                         <div className="col-md-3">
                             <label className="form-label small">ธนาคาร/ผู้ให้บริการ</label>
@@ -93,7 +126,7 @@ export default function AdminPaymentMethodsPage() {
                         </div>
                         <div className="col-12 d-flex justify-content-end gap-2 mt-3">
                             <button className="btn btn-success px-4" onClick={handleAdd} disabled={!bankName || !accountName || !accountNumber}>บันทึก</button>
-                            <button className="btn btn-light px-4" onClick={() => setShowAddForm(false)}>ยกเลิก</button>
+                            <button className="btn btn-light px-4" onClick={resetForm}>ยกเลิก</button>
                         </div>
                     </div>
                 </div>
@@ -120,7 +153,12 @@ export default function AdminPaymentMethodsPage() {
                                     <td>{m.accountNumber}</td>
                                     <td className="text-center">
                                         {m.qrCodeUrl ? (
-                                            <i className="bi bi-qr-code text-primary fs-5 cursor-pointer" title="มีรูป QR" onClick={() => window.open(m.qrCodeUrl, '_blank')}></i>
+                                            <i
+                                                className="bi bi-qr-code text-primary fs-5"
+                                                title="คลิกเพื่อดูรูป QR"
+                                                onClick={() => showQr(m.qrCodeUrl)}
+                                                style={{ cursor: 'pointer' }}
+                                            ></i>
                                         ) : <span className="text-muted small">ไม่มี</span>}
                                     </td>
                                     <td>
@@ -135,6 +173,12 @@ export default function AdminPaymentMethodsPage() {
                                         </div>
                                     </td>
                                     <td>
+                                        <button
+                                            className="btn btn-sm btn-outline-primary me-2"
+                                            onClick={() => handleEdit(m)}
+                                        >
+                                            <i className="bi bi-pencil"></i>
+                                        </button>
                                         <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(m.id)}>
                                             <i className="bi bi-trash"></i>
                                         </button>
@@ -152,6 +196,27 @@ export default function AdminPaymentMethodsPage() {
                     </table>
                 </div>
             </div>
+
+            {/* QR Code Modal */}
+            {showQrModal && (
+                <div
+                    className="modal fade show d-block"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+                    onClick={() => setShowQrModal(false)}
+                >
+                    <div className="modal-dialog modal-dialog-centered">
+                        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <h5 className="modal-title">QR Code สำหรับชำระเงิน</h5>
+                                <button type="button" className="btn-close" onClick={() => setShowQrModal(false)}></button>
+                            </div>
+                            <div className="modal-body text-center">
+                                <img src={currentQrUrl} alt="QR Code" className="img-fluid" style={{ maxHeight: '500px' }} />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

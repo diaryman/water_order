@@ -384,6 +384,36 @@ export async function createPaymentMethod(bankName: string, accountName: string,
     return { success: true }
 }
 
+export async function updatePaymentMethod(id: number, bankName: string, accountName: string, accountNumber: string, qrCodeUrl?: string) {
+    await prisma.paymentMethod.update({
+        where: { id },
+        data: { bankName, accountName, accountNumber, qrCodeUrl }
+    })
+    return { success: true }
+}
+
+export async function deleteRound(id: number) {
+    try {
+        // Check if round has any orders
+        const orderCount = await prisma.order.count({
+            where: { roundId: id }
+        });
+
+        if (orderCount > 0) {
+            return { error: `ไม่สามารถลบรอบได้ เนื่องจากมี ${orderCount} รายการสั่งซื้อในรอบนี้` };
+        }
+
+        // Delete the round
+        await prisma.round.delete({
+            where: { id }
+        });
+
+        return { success: true };
+    } catch (error) {
+        return { error: 'เกิดข้อผิดพลาดในการลบรอบ' };
+    }
+}
+
 export async function deletePaymentMethod(id: number) {
     await prisma.paymentMethod.delete({ where: { id } })
     return { success: true }
