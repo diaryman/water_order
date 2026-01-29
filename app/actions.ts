@@ -75,8 +75,7 @@ export async function createOrder(data: {
     memberId: number,
     items: { productId: number, quantity: number, price: number }[],
     total: number,
-    slipUrl?: string,
-    roundId?: number
+    slipUrl?: string
 }) {
     // Validate Input
     const validation = CreateOrderSchema.safeParse(data);
@@ -84,20 +83,16 @@ export async function createOrder(data: {
         throw new Error(validation.error.issues[0].message);
     }
 
-    // Use provided roundId or get current round
-    let targetRoundId = data.roundId;
-    if (!targetRoundId) {
-        const activeRound = await getCurrentRound();
-        if (!activeRound || !activeRound.isAcceptingOrders) {
-            throw new Error("ขณะนี้ปิดรับออเดอร์แล้ว");
-        }
-        targetRoundId = activeRound.id;
+    const activeRound = await getCurrentRound()
+
+    if (!activeRound || !activeRound.isAcceptingOrders) {
+        throw new Error("ขณะนี้ปิดรับออเดอร์แล้ว")
     }
 
     const order = await prisma.order.create({
         data: {
             memberId: data.memberId,
-            roundId: targetRoundId,
+            roundId: activeRound.id,
             total: data.total,
             status: 'PENDING',
             slipUrl: data.slipUrl,

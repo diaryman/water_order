@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { getGroups, getMembers, getProducts, getPaymentMethods, createOrder, getRounds } from '../actions';
+import { getGroups, getMembers, getProducts, getPaymentMethods, createOrder } from '../actions';
 import { useToast } from '@/app/components/ToastProvider';
 
 // Types
@@ -11,7 +11,6 @@ type Group = { id: number; name: string };
 type Member = { id: number; name: string; groupId: number };
 type Product = { id: number; name: string; price: number; type: string };
 type PaymentMethod = { id: number; bankName: string; accountName: string; accountNumber: string; qrCodeUrl: string | null };
-type Round = { id: number; roundName: string; isAcceptingOrders: boolean };
 
 export default function OrderPage() {
     const router = useRouter();
@@ -20,12 +19,10 @@ export default function OrderPage() {
     const [groups, setGroups] = useState<Group[]>([]);
     const [members, setMembers] = useState<Member[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
-    const [rounds, setRounds] = useState<Round[]>([]);
 
     // Selection State
     const [selectedGroupId, setSelectedGroupId] = useState<number | ''>('');
     const [selectedMemberId, setSelectedMemberId] = useState<number | ''>('');
-    const [selectedRoundId, setSelectedRoundId] = useState<number | null>(null);
     const [cart, setCart] = useState<{ [key: number]: number }>({}); // productId -> quantity
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedSlip, setSelectedSlip] = useState<File | null>(null);
@@ -36,17 +33,6 @@ export default function OrderPage() {
     useEffect(() => {
         getGroups().then(setGroups);
         getProducts().then(setProducts);
-
-        // Load rounds and set latest as default
-        getRounds().then(rounds => {
-            setRounds(rounds);
-            // Set latest active round as default
-            const activeRounds = rounds.filter(r => r.isAcceptingOrders);
-            if (activeRounds.length > 0) {
-                const latestRound = activeRounds[activeRounds.length - 1];
-                setSelectedRoundId(latestRound.id);
-            }
-        });
 
         // Remember Me: Load from localStorage
         const savedGroupId = localStorage.getItem('water_selectedGroupId');
@@ -108,24 +94,49 @@ export default function OrderPage() {
                     <p className="text-muted">สวัสดิการสำนักวิทยาการสารสนเทศ สำนักงานศาลปกครอง</p>
                 </div>
 
+                {/* Step Navigator */}
+                <div className="position-fixed" style={{ top: '100px', right: '30px', zIndex: 1000 }}>
+                    <div className="card shadow-sm border-0" style={{ width: '200px' }}>
+                        <div className="card-body p-3">
+                            <h6 className="fw-bold mb-3 text-center">ขั้นตอนการสั่งซื้อ</h6>
+                            <div className="d-flex flex-column gap-2">
+                                <div className={`d-flex align-items-center p-2 rounded ${step === 1 ? 'bg-primary text-white' : step > 1 ? 'bg-success text-white' : 'bg-light text-muted'
+                                    }`}>
+                                    <div className="me-2" style={{ width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid currentColor' }}>
+                                        {step > 1 ? '✓' : '1'}
+                                    </div>
+                                    <small className="fw-bold">ระบุผู้สั่งซื้อ</small>
+                                </div>
+                                <div className={`d-flex align-items-center p-2 rounded ${step === 2 ? 'bg-primary text-white' : step > 2 ? 'bg-success text-white' : 'bg-light text-muted'
+                                    }`}>
+                                    <div className="me-2" style={{ width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid currentColor' }}>
+                                        {step > 2 ? '✓' : '2'}
+                                    </div>
+                                    <small className="fw-bold">เลือกสินค้า</small>
+                                </div>
+                                <div className={`d-flex align-items-center p-2 rounded ${step === 3 ? 'bg-primary text-white' : step > 3 ? 'bg-success text-white' : 'bg-light text-muted'
+                                    }`}>
+                                    <div className="me-2" style={{ width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid currentColor' }}>
+                                        {step > 3 ? '✓' : '3'}
+                                    </div>
+                                    <small className="fw-bold">ชำระเงิน</small>
+                                </div>
+                                <div className={`d-flex align-items-center p-2 rounded ${step === 4 ? 'bg-success text-white' : 'bg-light text-muted'
+                                    }`}>
+                                    <div className="me-2" style={{ width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid currentColor' }}>
+                                        {step === 4 ? '✓' : '4'}
+                                    </div>
+                                    <small className="fw-bold">เสร็จสมบูรณ์</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="row justify-content-center">
                     <div className="col-md-6 text-center">
                         <h2 className="mb-4">ระบุผู้สั่งซื้อ</h2>
                         <div className="card card-custom p-4 text-start">
-                            <div className="mb-3">
-                                <label className="form-label">เลือกรอบการสั่งซื้อ</label>
-                                <select
-                                    className="form-select form-select-lg"
-                                    value={selectedRoundId || ''}
-                                    onChange={(e) => setSelectedRoundId(Number(e.target.value))}
-                                >
-                                    <option value="">-- เลือกรอบ --</option>
-                                    {rounds.filter(r => r.isAcceptingOrders).map(r => (
-                                        <option key={r.id} value={r.id}>{r.roundName}</option>
-                                    ))}
-                                </select>
-                            </div>
-
                             <div className="mb-3">
                                 <label className="form-label">กลุ่มงาน/สำนัก</label>
                                 <select
@@ -331,8 +342,7 @@ export default function OrderPage() {
                 memberId: Number(selectedMemberId),
                 items,
                 total: calculateTotal(),
-                slipUrl: slipUrl ?? undefined,
-                roundId: selectedRoundId ?? undefined
+                slipUrl: slipUrl ?? undefined
             });
             setCreatedOrder(order);
 
