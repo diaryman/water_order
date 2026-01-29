@@ -29,6 +29,10 @@ export default function OrderPage() {
     const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
     const [createdOrder, setCreatedOrder] = useState<any>(null);
 
+    // QR Modal State
+    const [showQrModal, setShowQrModal] = useState(false);
+    const [currentQrUrl, setCurrentQrUrl] = useState('');
+
     // Load initial data
     useEffect(() => {
         getGroups().then(setGroups);
@@ -418,8 +422,16 @@ export default function OrderPage() {
                                                             src={m.qrCodeUrl}
                                                             alt="QR Code"
                                                             className="img-fluid rounded border shadow-sm"
-                                                            style={{ maxWidth: '180px' }}
+                                                            style={{ maxWidth: '180px', cursor: 'pointer' }}
+                                                            onClick={() => {
+                                                                setCurrentQrUrl(m.qrCodeUrl!);
+                                                                setShowQrModal(true);
+                                                            }}
+                                                            title="คลิกเพื่อขยายใหญ่"
                                                         />
+                                                        <div className="small text-muted mt-1">
+                                                            <i className="bi bi-zoom-in"></i> คลิกเพื่อขยาย
+                                                        </div>
                                                     </div>
                                                 )}
                                             </div>
@@ -504,5 +516,40 @@ export default function OrderPage() {
         );
     }
 
-    return null;
+    return (
+        <>
+            {/* QR Code Modal */}
+            {showQrModal && (
+                <div
+                    className="modal fade show d-block"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}
+                    onClick={() => setShowQrModal(false)}
+                >
+                    <div className="modal-dialog modal-dialog-centered modal-lg">
+                        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <h5 className="modal-title">
+                                    <i className="bi bi-qr-code me-2"></i>
+                                    QR Code สำหรับชำระเงิน
+                                </h5>
+                                <button type="button" className="btn-close" onClick={() => setShowQrModal(false)}></button>
+                            </div>
+                            <div className="modal-body text-center p-4">
+                                <img
+                                    src={currentQrUrl}
+                                    alt="QR Code"
+                                    className="img-fluid rounded shadow"
+                                    style={{ maxHeight: '600px' }}
+                                />
+                                <p className="text-muted mt-3 mb-0">
+                                    <i className="bi bi-info-circle me-1"></i>
+                                    แสกน QR Code เพื่อชำระเงิน
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
+    );
 }
