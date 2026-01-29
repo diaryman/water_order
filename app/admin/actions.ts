@@ -404,7 +404,7 @@ export async function deleteRound(id: number) {
         }
 
         // Delete the round
-        await prisma.round.delete({
+        await prisma.orderRound.delete({
             where: { id }
         });
 
