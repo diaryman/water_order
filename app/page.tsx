@@ -1,11 +1,13 @@
-import { getTodaySummary, getCurrentRound } from '@/app/actions'
+import { getSummary, getCurrentRound, getRounds } from '@/app/actions'
 import Link from 'next/link'
+import HomeDashboard from '@/app/components/HomeDashboard'
 
 export const dynamic = 'force-dynamic'
 
 export default async function Home() {
   const round = await getCurrentRound()
-  const summary = await getTodaySummary()
+  const rounds = await getRounds()
+  const summary = await getSummary(round?.id)
 
   return (
     <div className="container py-5">
@@ -39,68 +41,12 @@ export default async function Home() {
         </div>
       )}
 
-      {/* Daily Summary Section */}
-      <div className="row g-4 mb-5">
-        <div className="col-12">
-          <h3 className="fw-bold mb-4 text-primary text-center">สรุปยอดคำสั่งซื้อรอบวันนี้</h3>
-        </div>
-        <div className="col-md-6">
-          <div className="card card-custom p-4 text-center border-0 shadow-sm h-100" style={{ background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)' }}>
-            <i className="bi bi-droplet-fill text-primary display-3 mb-3"></i>
-            <h2 className="fw-bold display-4">{summary.totalSmall}</h2>
-            <p className="text-muted fw-bold mb-0">น้ำแพ็คเล็ก (แพ็ค)</p>
-          </div>
-        </div>
-        <div className="col-md-6">
-          <div className="card card-custom p-4 text-center border-0 shadow-sm h-100" style={{ background: 'linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%)' }}>
-            <i className="bi bi-bucket-fill text-info display-3 mb-3"></i>
-            <h2 className="fw-bold display-4">{summary.totalLarge}</h2>
-            <p className="text-muted fw-bold mb-0">น้ำแพ็คใหญ่ (แพ็ค)</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Orders Table (Simple) */}
-      <div className="card card-custom border-0 shadow-sm overflow-hidden bg-white">
-        <div className="card-header bg-white border-0 py-3">
-          <h5 className="fw-bold mb-0"><i className="bi bi-clock-history me-2 text-warning"></i> รายการสั่งซื้อล่าสุด</h5>
-        </div>
-        <div className="table-responsive">
-          <table className="table table-hover align-middle mb-0 small">
-            <thead className="table-light">
-              <tr>
-                <th className="ps-4">ชื่อผู้สั่ง</th>
-                <th>รายการ</th>
-                <th className="text-end pe-4">สถานะ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {summary.orders.slice(0, 5).map(order => (
-                <tr key={order.id}>
-                  <td className="ps-4">
-                    <div className="fw-bold">{order.member.name}</div>
-                    <div className="smallest text-muted">{order.member.group.name}</div>
-                  </td>
-                  <td>
-                    {order.items.map(it => `${it.product.name} x${it.quantity}`).join(', ')}
-                  </td>
-                  <td className="text-end pe-4">
-                    <span className={`badge rounded-pill ${order.status === 'PENDING' ? 'bg-warning text-dark' :
-                      order.status === 'PAID' ? 'bg-info text-white' : 'bg-success'
-                      }`} style={{ fontSize: '0.65rem' }}>
-                      {order.status === 'PENDING' ? 'รอตรวจสอบ' :
-                        order.status === 'PAID' ? 'ชำระแล้ว' : 'สำเร็จ'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {summary.orders.length === 0 && (
-                <tr><td colSpan={3} className="text-center py-4 text-muted small">ยังไม่มีรายการสั่งซื้อในรอบนี้</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {/* Dashboard Section (Summary + Orders) */}
+      <HomeDashboard
+        initialSummary={summary}
+        rounds={rounds}
+        defaultRoundId={round ? round.id : (rounds.length > 0 ? rounds[0].id : 0)}
+      />
 
       {/* Admin Footer */}
       <div className="mt-5 text-center">

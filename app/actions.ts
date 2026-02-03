@@ -109,25 +109,27 @@ export async function createOrder(data: {
     return order
 }
 
-export async function getTodaySummary() {
-    // Only show summary for current round? 
-    // Or keep logic as "Today"? 
-    // User request: "support rounds". 
-    // Let's modify summary to be "Current Round Summary" if a round exists, or falback to today?
-    // Actually, asking to "add round" implies we should focus on rounds.
-    // Let's keep existing "today" logic for now unless requested to change stats, 
-    // BUT usually round summary is more useful.
-    // For now I will leave getTodaySummary as is (by date) and maybe add getRoundSummary later if needed,
-    // to verify minimal changes first.
-    // Wait, the replaced content must match target. I will modify createOrder and ADD the new functions before it.
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+export async function getSummary(roundId?: number) {
+    let targetRoundId = roundId;
+
+    if (!targetRoundId) {
+        const activeRound = await getCurrentRound();
+        if (activeRound) {
+            targetRoundId = activeRound.id;
+        } else {
+            // Fallback: finding the very last round created
+            const lastRound = await prisma.orderRound.findFirst({ orderBy: { createdAt: 'desc' } });
+            if (lastRound) targetRoundId = lastRound.id;
+        }
+    }
+
+    if (!targetRoundId) {
+        return { orders: [], totalSmall: 0, totalLarge: 0, totalPrice: 0 };
+    }
 
     const orders = await prisma.order.findMany({
         where: {
-            createdAt: {
-                gte: today
-            }
+            roundId: targetRoundId
         },
         include: {
             member: {
