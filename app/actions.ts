@@ -1,10 +1,8 @@
 'use server'
 
-import { PrismaClient } from '@prisma/client'
+import prisma from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { CreateOrderSchema } from '@/lib/schemas';
-
-const prisma = new PrismaClient()
 
 export async function getGroups() {
     return await prisma.group.findMany({

@@ -2,13 +2,11 @@
 
 import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { PrismaClient } from '@prisma/client'
+import prisma from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { SignJWT, jwtVerify } from 'jose'
 import { LoginSchema, CreateGroupSchema, CreateMemberSchema, CreateProductSchema } from '@/lib/schemas';
 import { checkRateLimit } from '@/lib/ratelimit';
-
-const prisma = new PrismaClient()
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret-key-change-this-in-prod')
 const COOKIE_NAME = 'admin_session'
 

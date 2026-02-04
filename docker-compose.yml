@@ -11,8 +11,10 @@ services:
       - "3000:3000"
     environment:
       - DATABASE_URL=file:/app/prisma/dev.db
+      - JWT_SECRET=${JWT_SECRET:-changeme}
+      - TZ=Asia/Bangkok
     volumes:
-      # Persist SQLite database
-      - ./prisma/dev.db:/app/prisma/dev.db
+      # Persist SQLite database folder (needs write access for WAL files)
+      - ./prisma:/app/prisma
       # Persist uploads (slips/QR)
       - ./public/uploads:/app/public/uploads
