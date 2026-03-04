@@ -60,6 +60,16 @@ export async function toggleRoundStatus(id: number, isAcceptingOrders: boolean) 
     return round
 }
 
+export async function updateRoundName(id: number, roundName: string) {
+    const round = await prisma.orderRound.update({
+        where: { id },
+        data: { roundName }
+    })
+    revalidatePath('/admin/rounds')
+    revalidatePath('/')
+    return round
+}
+
 export async function getCurrentRound() {
     // Assuming "Active" means the one relevant for display
     // We could find the latest one
