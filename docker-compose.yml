@@ -13,6 +13,8 @@ services:
       - DATABASE_URL=file:/app/prisma/dev.db
       - JWT_SECRET=${JWT_SECRET:-changeme}
       - TZ=Asia/Bangkok
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL}
     volumes:
       # Persist SQLite database folder (needs write access for WAL files)
       - ./prisma:/app/prisma
