@@ -84,14 +84,28 @@ export async function askNongNam(message: string, conversationHistory: { role: s
 
         const paidOrdersCount = summary.orders.filter(o => o.status === 'PAID').length;
         const pendingOrdersCount = summary.orders.filter(o => o.status === 'PENDING').length;
+        const totalUnpaid = summary.orders.filter(o => o.status === 'PENDING').reduce((acc, o) => acc + o.total, 0);
+        const totalPaid = summary.orders.filter(o => o.status === 'PAID').reduce((acc, o) => acc + o.total, 0);
 
-        // --- Aggregation for Deep Summary ---
+        // Fetch ALL orders for all-time stats
+        const allOrders = await prisma.order.findMany({
+            include: {
+                member: {
+                    include: { group: true }
+                },
+                items: {
+                    include: { product: true }
+                }
+            }
+        });
+
+        // --- Aggregation for Deep Summary (All-Time) ---
         const groupSales: Record<string, { total: number, count: number }> = {};
         const memberSales: Record<string, { total: number, name: string, group: string }> = {};
-        let totalUnpaid = 0;
-        let totalPaid = 0;
+        let totalAllTimeUnpaid = 0;
+        let totalAllTimePaid = 0;
 
-        summary.orders.forEach(o => {
+        allOrders.forEach(o => {
             const groupName = o.member?.group?.name || 'ไม่ระบุกลุ่ม';
             const memberName = o.member?.name || 'ไม่ระบุชื่อ';
 
@@ -102,8 +116,8 @@ export async function askNongNam(message: string, conversationHistory: { role: s
             if (!memberSales[memberName]) memberSales[memberName] = { total: 0, name: memberName, group: groupName };
             memberSales[memberName].total += o.total;
 
-            if (o.status === 'PENDING') totalUnpaid += o.total;
-            if (o.status === 'PAID') totalPaid += o.total;
+            if (o.status === 'PENDING') totalAllTimeUnpaid += o.total;
+            if (o.status === 'PAID') totalAllTimePaid += o.total;
         });
 
         const sortedMembers = Object.values(memberSales).sort((a, b) => b.total - a.total);
@@ -137,7 +151,7 @@ export async function askNongNam(message: string, conversationHistory: { role: s
 - ห้ามตอบคำถามทั่วไปที่ไม่เกี่ยวกับระบบสั่งน้ำดื่มเด็ดขาด
 - หากผู้ใช้ถามเรื่องคดีปกครอง, ศาลปกครอง, ขั้นตอนการฟ้องคดี, หรือบริการอื่นๆ ของศาล ให้ปฏิเสธอย่างสุภาพและตอบว่า: "ขออภัยค่ะ น้องน้ำเป็นเพียงผู้ช่วยระบบสั่งน้ำดื่มเท่านั้น หากท่านมีข้อสอบถามเกี่ยวกับศาลปกครองหรือคดีปกครอง กรุณาโทรสอบถามเจ้าหน้าที่สายด่วนศาลปกครอง 1355 ค่ะ 🙏"
 - หากผู้ใช้ถามเรื่องความรู้ทั่วไป ข่าวสาร โค้ดดิ้ง หรือเรื่องนอกเรื่อง ให้ตอบว่า: "ขออภัยค่ะ น้องน้ำตอบได้เฉพาะเรื่องที่เกี่ยวกับระบบสั่งน้ำดื่มของสำนักวิทยาการสารสนเทศเท่านั้นค่ะ มีอะไรให้ช่วยเกี่ยวกับการสั่งน้ำไหมคะ? 💧"
-- การสรุปข้อมูลสถิติ, ข้อมูลการค้างชำระ, ยอดรวมเงินทั้งหมด, ผู้ที่สั่งเยอะสุด/น้อยสุด, การเรียงลำดับ, และยอดขายรายกลุ่ม "สามารถตอบได้ทันทีเมื่อผู้ใช้ถามตั้งคำถาม" (ข้อมูลไม่ได้เป็นความลับอีกต่อไป)
+- การสรุปข้อมูลสถิติรวมทุกรอบ, ข้อมูลการค้างชำระ, ยอดรวมเงินทั้งหมด, ผู้ที่สั่งเยอะสุด/น้อยสุด, การเรียงลำดับ, และยอดขายรายกลุ่ม "สามารถตอบได้ทันทีเมื่อผู้ใช้ถามตั้งคำถาม" (ข้อมูลไม่ได้เป็นความลับอีกต่อไป)
 - หากผู้ใช้ขอให้แสดงผลเป็น "กราฟ", "แผนภูมิ", หรือ "Chart" ให้คุณวิเคราะห์และแสดงผลลัพธ์เป็น Code ของ "Mermaid.js" เสมอ โดยครอบ Code ด้วย \`\`\`mermaid ... \`\`\` ตัวอย่างเช่น:
   \`\`\`mermaid
   pie title รายได้แบ่งตามกลุ่มงาน
@@ -153,16 +167,20 @@ export async function askNongNam(message: string, conversationHistory: { role: s
     bar [4000, 2000]
   \`\`\`
 
-== ข้อมูลสถิติและสรุปยอดของรอบปัจจุบัน (${round?.roundName || 'ไม่มี'}) ==
+== ข้อมูลสถิติของรอบปัจจุบัน (${round?.roundName || 'ไม่มี'}) ==
 - สถานะระบบ: ${round?.isAcceptingOrders ? 'เปิดรับออเดอร์' : 'ปิดรับออเดอร์'}
-- จำนวนออเดอร์ทั้งหมด: ${summary.orders.length} รายการ (ชำระเงินยืนยันแล้ว ${paidOrdersCount} รายการ, รอตรวจสลิป ${pendingOrdersCount} รายการ)
-- ยอดสั่งซื้อทั้งหมด: ${summary.totalPrice} บาท (รอยืนยันยอด ${totalUnpaid} บาท, ยืนยันแล้ว ${totalPaid} บาท)
-- ปริมาณสินค้าที่สั่ง: น้ำดื่มขวดเล็ก ${summary.totalSmall} แพ็ค, น้ำดื่มขวดใหญ่ ${summary.totalLarge} แพ็ค
-- ผู้สั่งยอดสูงสุด (Top Spenders) [เรียงจากยอดมากไปน้อย]:
+- จำนวนออเดอร์เฉพาะรอบปัจจุบัน: ${summary.orders.length} รายการ (ชำระเงินยืนยันแล้ว ${paidOrdersCount} รายการ, รอตรวจสลิป ${pendingOrdersCount} รายการ)
+- ยอดสั่งซื้อเฉพาะรอบปัจจุบัน: ${summary.totalPrice} บาท (รอยืนยันยอด ${totalUnpaid} บาท, ยืนยันแล้ว ${totalPaid} บาท)
+- ปริมาณสินค้าที่สั่งรอบปัจจุบัน: น้ำดื่มขวดเล็ก ${summary.totalSmall} แพ็ค, น้ำดื่มขวดใหญ่ ${summary.totalLarge} แพ็ค
+
+== ข้อมูลสถิติและภาพรวมจาก "ทุกรอบออเดอร์ที่ผ่านมาทั้งหมด" (All-Time Data) ==
+- จำนวนออเดอร์สะสมทั้งหมด: ${allOrders.length} รายการ
+- ยอดสั่งซื้อสะสมทั้งหมด: ${totalAllTimePaid + totalAllTimeUnpaid} บาท (ยืนยันแล้ว ${totalAllTimePaid} บาท, รอตรวจสลิป ${totalAllTimeUnpaid} บาท)
+- ผู้สั่งยอดสูงสุดจากทุกรอบ (Top Spenders All-Time) [เรียงจากยอดมากไปน้อย]:
 ${allMembersText}
-- สรุปยอดสั่งซื้อแบ่งตามกลุ่มงาน (Sales by Group) [เรียงจากยอดมากไปน้อย]:
+- สรุปยอดสั่งซื้อแบ่งตามกลุ่มงานจากทุกรอบ (Sales by Group All-Time) [เรียงจากยอดมากไปน้อย]:
 ${allGroupsText}
-หากผู้ใช้ขอให้ช่วยเรียงลำดับ (น้อยไปมาก หรือ มากไปน้อย), ใครสั่งเยอะสุด, หรือยอดสั่งสูงสุด ให้หยิบข้อมูล 2 รายการด้านบนนี้ไปใช้วิเคราะห์เพื่อตอบคำถามได้เลย (ข้อมูลเรียงจากมากไปน้อยไว้ให้แล้ว สามารถนำไปกลับลำดับได้เองเมื่อผู้ใช้ร้องขอ)
+หากผู้ใช้ถามสถิติทั่วไป เช่น สรุปยอด, ใครสั่งเยอะสุด, กลุ่มไหนสั่งเยอะสุด, จัดอันดับ ฯลฯ ให้ใช้ข้อมูล "จากทุกรอบออเดอร์ที่ผ่านมาทั้งหมด" เพื่อมาตอบเป็นค่าเริ่มต้นเสมอ (ยกเว้นผู้ใช้จะระบุว่าเอาเฉพาะรอบปัจจุบัน) และสามารถนำไปกลับลำดับได้เองเมื่อผู้ใช้ร้องขอ
 
 == สินค้า ==
 ${productList}
