@@ -39,35 +39,147 @@ export async function getChatbotData() {
     };
 }
 
-// Upload slip and create order
+// Analyze slip with Vision
+export async function analyzeSlip(imageBuffer: Buffer, expectedTotal: number) {
+    try {
+        const base64Image = imageBuffer.toString('base64');
+        const response = await fetch(`${API_URL}/chat/completions`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'apikey': API_KEY,
+            },
+            body: JSON.stringify({
+                model: '/model',
+                messages: [
+                    {
+                        role: 'user',
+                        content: [
+                            {
+                                type: 'text',
+                                text: `วิเคราะห์สลิปธนาคารไทยอย่างละเอียด\n` +
+                                    `เป้าหมาย: ตรวจสอบและดึงข้อมูลการโอนเงิน\n\n` +
+                                    `กฎสำคัญ:\n` +
+                                    `1. "amount" ต้องเป็นตัวเลขเท่านั้น (ห้ามมีเครื่องหมายคอมม่า)\n` +
+                                    `2. "date" หากปีเป็น พ.ศ. (เช่น 2568, 2569) ให้คงไว้ตามนั้น\n` +
+                                    `3. ยอดเงินที่คาดหวังคือ ${expectedTotal} บาท (ใช้เพื่อช่วยตรวจสอบ แต่ให้ยึดตามที่เห็นในสลิปจริง)\n` +
+                                    `4. ตรวจสอบ "จำนวนเงิน" หรือ "ยอดโอน" ให้ดี (มักจะอยู่บรรทัดล่างๆ)\n\n` +
+                                    `รูปแบบ JSON:\n` +
+                                    `{\n` +
+                                    `  "isSlip": boolean,\n` +
+                                    `  "bank": "string", // ชื่อธนาคารภาษาไทยหรืออังกฤษ\n` +
+                                    `  "amount": number,\n` +
+                                    `  "date": "string", // DD/MM/YYYY\n` +
+                                    `  "time": "string", // HH:mm\n` +
+                                    `  "confidence": number\n` +
+                                    `}\n\n` +
+                                    `ตอบเฉพาะ JSON เท่านั้น ห้ามมีคำอธิบาย`
+                            },
+                            {
+                                type: 'image_url',
+                                image_url: {
+                                    url: `data:image/jpeg;base64,${base64Image}`
+                                }
+                            }
+                        ]
+                    }
+                ],
+                max_tokens: 500,
+            }),
+        });
+
+        if (!response.ok) return null;
+        const data = await response.json();
+        const content = data.choices?.[0]?.message?.content || '';
+        const jsonMatch = content.match(/\{[\s\S]*?\}/);
+        if (jsonMatch) {
+            let result = JSON.parse(jsonMatch[0]);
+
+            // Post-processing to ensure amount is a number and clean
+            if (typeof result.amount === 'string') {
+                result.amount = parseFloat(result.amount.replace(/,/g, ''));
+            }
+
+            // Strict check: must have amount and date/time to be valid
+            if (!result.amount || isNaN(result.amount) || !result.date || !result.time) {
+                result.isSlip = false;
+            }
+            return result;
+        }
+        return null;
+    } catch (error) {
+        console.error('Slip Analysis Error:', error);
+        return null;
+    }
+}
+
+// Verify slip only (without creating order)
+export async function chatbotVerifySlip(formData: FormData, expectedTotal: number) {
+    try {
+        const file = formData.get('file') as File;
+        if (!file) return { success: false, error: 'ไม่พบไฟล์สลิป' };
+
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+
+        // 1. Upload for preview/storage
+        const slipUrl = await uploadSlip(formData);
+        if (!slipUrl) return { success: false, error: 'อัพโหลดสลิปไม่สำเร็จ' };
+
+        // 2. AI Analysis
+        const analysis = await analyzeSlip(buffer, expectedTotal);
+
+        if (!analysis || !analysis.isSlip) {
+            return {
+                success: false,
+                analysis,
+                error: 'เอกสารนี้ดูเหมือนไม่ใช่สลิปการโอนเงินที่สมบูรณ์ (ไม่พบยอดเงิน หรือวันเวลาที่โอน) กรุณาตรวจสอบและส่งใหม่อีกครั้งนะคะ 🙏'
+            };
+        }
+
+        return {
+            success: true,
+            slipUrl,
+            analysis
+        };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+}
+
+// Upload slip and create order (supports single or multi-slip logic)
 export async function chatbotUploadSlipAndCreateOrder(
-    formData: FormData,
+    slips: Array<{ url: string, amount: number, bank: string, date: string, time: string }>,
     orderData: {
         memberId: number,
         items: { productId: number, quantity: number, price: number }[],
         total: number
-    }
+    },
+    forcedStatus?: string
 ) {
     try {
-        // 1. Upload the slip image
-        const slipUrl = await uploadSlip(formData);
-        if (!slipUrl) {
-            return { success: false, error: 'ไม่สามารถอัพโหลดสลิปได้ กรุณาลองใหม่' };
+        const totalPaid = slips.reduce((sum, s) => sum + s.amount, 0);
+        const slipUrls = slips.map(s => s.url).join(',');
+
+        let status = forcedStatus || 'PENDING';
+        if (!forcedStatus && Math.abs(totalPaid - orderData.total) < 0.01) {
+            status = 'PAID';
         }
 
-        // 2. Create the order with the slip
         const order = await createOrder({
             memberId: orderData.memberId,
             items: orderData.items,
             total: orderData.total,
-            slipUrl: slipUrl,
+            slipUrl: slipUrls,
+            status: status,
+            slips: slips
         });
 
         return {
             success: true,
             orderId: order.id,
-            total: orderData.total,
-            slipUrl,
+            totalPaid,
+            isAutoConfirmed: status === 'PAID'
         };
     } catch (error: any) {
         console.error('Chatbot order creation error:', error);

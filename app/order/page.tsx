@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { getGroups, getMembers, getProducts, getPaymentMethods, createOrder } from '../actions';
+import { getGroups, getMembers, getProducts, getPaymentMethods } from '../actions';
+import { chatbotUploadSlipAndCreateOrder } from '@/app/chatbot-actions';
+import { uploadFile } from '@/app/admin/actions';
 import { useToast } from '@/app/components/ToastProvider';
 
 // Types
@@ -65,6 +67,8 @@ export default function OrderPage() {
     const [selectedSlip, setSelectedSlip] = useState<File | null>(null);
     const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
     const [createdOrder, setCreatedOrder] = useState<any>(null);
+    const [slipUrl, setSlipUrl] = useState<string | null>(null);
+    const [uploadingSlip, setUploadingSlip] = useState(false);
 
     // QR Modal State
     const [showQrModal, setShowQrModal] = useState(false);
@@ -124,77 +128,36 @@ export default function OrderPage() {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Validate file type
-        const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-        if (!validTypes.includes(file.type)) {
-            error('ประเภทไฟล์ไม่ถูกต้อง (รองรับเฉพาะ JPG, PNG)');
-            e.target.value = ''; // Reset input
-            return;
-        }
-
-        // Validate file size (5MB max)
-        const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-        if (file.size > maxSize) {
-            error('ไฟล์มีขนาดใหญ่เกินไป (สูงสุด 5 MB)');
-            e.target.value = '';
-            return;
-        }
-
-        // Validate image dimensions
+        setUploadingSlip(true);
         try {
-            const img = new Image();
-            const objectUrl = URL.createObjectURL(file);
-
-            img.onload = () => {
-                URL.revokeObjectURL(objectUrl);
-
-                if (img.width < 200 || img.height < 200) {
-                    error('ขนาดภาพเล็กเกินไป (ต้องไม่น้อยกว่า 200x200 พิกเซล)');
-                    e.target.value = '';
-                    return;
-                }
-
-                // All validations passed
+            const formData = new FormData();
+            formData.append('file', file);
+            const uploadedUrl = await uploadFile(formData);
+            if (uploadedUrl) {
                 setSelectedSlip(file);
-                success('อัพโหลดสลิปสำเร็จ');
-            };
-
-            img.onerror = () => {
-                URL.revokeObjectURL(objectUrl);
-                error('ไม่สามารถอ่านไฟล์ภาพได้ กรุณาลองใหม่');
+                setSlipUrl(uploadedUrl);
+                success('✅ อัพโหลดสลิปสำเร็จแล้ว');
+            } else {
+                error('อัพโหลดสลิปไม่สำเร็จ กรุณาลองใหม่');
                 e.target.value = '';
-            };
-
-            img.src = objectUrl;
-        } catch (err) {
-            error('เกิดข้อผิดพลาดในการตรวจสอบไฟล์');
+            }
+        } catch (err: any) {
+            error('เกิดข้อผิดพลาด: ' + err.message);
             e.target.value = '';
+        } finally {
+            setUploadingSlip(false);
         }
     };
 
     const handleFinalSubmit = async () => {
         if (!selectedMemberId || totalItems === 0) return;
-
-        // Validate slip is uploaded
-        if (!selectedSlip) {
-            error('กรุณาอัพโหลดสลิปการชำระเงินก่อนยืนยัน');
+        if (!slipUrl) {
+            error('กรุณาอัพโหลดสลิปก่อนยืนยันสั่งซื้อ');
             return;
         }
 
         setIsSubmitting(true);
         try {
-            let slipUrl = null;
-            if (selectedSlip) {
-                const { uploadSlip } = await import('../admin/actions');
-                const formData = new FormData();
-                formData.append('file', selectedSlip);
-                slipUrl = await uploadSlip(formData);
-
-                if (!slipUrl) {
-                    throw new Error('ไม่สามารถอัพโหลดสลิปได้ กรุณาลองใหม่');
-                }
-            }
-
             const items = Object.entries(cart)
                 .filter(([_, qty]) => qty > 0)
                 .map(([pId, qty]) => {
@@ -206,18 +169,31 @@ export default function OrderPage() {
                     };
                 });
 
-            const order = await createOrder({
-                memberId: Number(selectedMemberId),
-                items,
-                total: calculateTotal(),
-                slipUrl: slipUrl ?? undefined
-            });
-            setCreatedOrder(order);
+            const result = await chatbotUploadSlipAndCreateOrder(
+                [{
+                    url: slipUrl,
+                    amount: calculateTotal(),
+                    bank: '',
+                    date: '',
+                    time: ''
+                }],
+                {
+                    memberId: Number(selectedMemberId),
+                    items,
+                    total: calculateTotal()
+                },
+                'PENDING'
+            );
 
-            setStep(4); // Success step
+            if (result.success) {
+                setCreatedOrder({ id: result.orderId, total: calculateTotal() });
+                setStep(4);
+                success('ยืนยันออเดอร์เรียบร้อยแล้วค่ะ');
+            } else {
+                throw new Error(result.error);
+            }
         } catch (err: any) {
             error(err.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่');
-            console.error(err);
             setIsSubmitting(false);
         }
     };
@@ -438,19 +414,44 @@ export default function OrderPage() {
                                             <div className="alert alert-warning small">ไม่พบข้อมูลบัญชีธนาคาร กรุณาติดต่อแอดมิน</div>
                                         )}
 
-                                        <div className="mt-2">
-                                            <label className="form-label fw-bold small">แนบสลิปโอนเงิน</label>
-                                            <div className="input-group input-group-sm">
-                                                <input
-                                                    type="file"
-                                                    className="form-control"
-                                                    accept="image/*"
-                                                    onChange={handleFileChange}
-                                                    id="slipUpload"
-                                                />
-                                                <label className="input-group-text" htmlFor="slipUpload"><i className="bi bi-upload"></i></label>
-                                            </div>
-                                            <p className="text-muted smallest mt-1" style={{ fontSize: '0.7rem' }}>* จำเป็นต้องแนบสลิปโอนเงินก่อนยืนยันสั่งซื้อ (JPG/PNG สูงสุด 5MB)</p>
+                                        <div className="mt-2 text-center">
+                                            <label className="form-label fw-bold small d-block text-start">
+                                                <i className="bi bi-paperclip me-1"></i>แนบสลิปโอนเงิน
+                                            </label>
+
+                                            {uploadingSlip ? (
+                                                <div className="p-3 bg-light rounded text-center mb-3">
+                                                    <div className="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+                                                    <span className="small">กำลังอัพโหลดสลิป...</span>
+                                                </div>
+                                            ) : slipUrl ? (
+                                                <div className="alert alert-success p-2 small text-start mb-3 border-0 shadow-sm">
+                                                    <div className="d-flex align-items-center mb-1">
+                                                        <i className="bi bi-check-circle-fill text-success me-2"></i>
+                                                        <span className="fw-bold">อัพโหลดสลิปสำเร็จ!</span>
+                                                    </div>
+                                                    <div className="ps-4">
+                                                        <div className="text-muted small">{selectedSlip?.name}</div>
+                                                    </div>
+                                                    <button className="btn btn-link btn-sm p-0 mt-2 text-decoration-none" onClick={() => { setSlipUrl(null); setSelectedSlip(null); }}>
+                                                        <i className="bi bi-arrow-repeat me-1"></i> เปลี่ยนรูปสลิป
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="input-group input-group-sm">
+                                                    <input
+                                                        type="file"
+                                                        className="form-control"
+                                                        accept="image/*"
+                                                        onChange={handleFileChange}
+                                                        id="slipUpload"
+                                                    />
+                                                    <label className="input-group-text" htmlFor="slipUpload"><i className="bi bi-upload"></i></label>
+                                                </div>
+                                            )}
+                                            {!slipUrl && !uploadingSlip && (
+                                                <p className="text-muted mt-1 text-start" style={{ fontSize: '0.7rem' }}>* แนบสลิปโอนเงินเพื่อยืนยันการชำระ</p>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

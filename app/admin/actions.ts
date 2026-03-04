@@ -436,7 +436,8 @@ export async function getAdminOrders(roundId?: number) {
         include: {
             member: { include: { group: true } },
             items: { include: { product: true } },
-            round: true
+            round: true,
+            slips: { orderBy: { createdAt: 'desc' } }
         },
         orderBy: { createdAt: 'desc' }
     });

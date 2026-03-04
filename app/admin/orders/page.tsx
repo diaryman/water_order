@@ -4,11 +4,16 @@ import { useState, useEffect } from 'react';
 import { getAdminOrders, updateOrderStatus, deleteOrder } from '../actions';
 import { getRounds } from '@/app/actions';
 
+type SlipPreview = {
+    slips: { url: string; bank?: string | null; amount?: number | null; date?: string | null; time?: string | null }[];
+    index: number;
+};
+
 export default function AdminOrdersPage() {
     const [orders, setOrders] = useState<any[]>([]);
     const [rounds, setRounds] = useState<any[]>([]);
     const [selectedRound, setSelectedRound] = useState<string>('0');
-    const [previewSlip, setPreviewSlip] = useState<string | null>(null);
+    const [previewSlip, setPreviewSlip] = useState<SlipPreview | null>(null);
     const [loading, setLoading] = useState(false);
 
     async function loadData() {
@@ -117,8 +122,26 @@ export default function AdminOrdersPage() {
                                     </td>
                                     <td className="text-end fw-bold text-primary fs-6">{order.total.toLocaleString()}</td>
                                     <td className="text-center">
-                                        {order.slipUrl ? (
-                                            <button className="btn btn-sm btn-light border" onClick={() => setPreviewSlip(order.slipUrl)}>
+                                        {(order.slips && order.slips.length > 0) ? (
+                                            <div className="d-flex flex-column align-items-center gap-1">
+                                                <button
+                                                    className="btn btn-sm btn-light border position-relative"
+                                                    onClick={() => setPreviewSlip({ slips: order.slips, index: 0 })}
+                                                    title={`ดูสลิป (${order.slips.length} รูป)`}
+                                                >
+                                                    <i className="bi bi-image text-success"></i>
+                                                    {order.slips.length > 1 && (
+                                                        <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '0.6rem' }}>
+                                                            {order.slips.length}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                                {order.slips[0].bank && (
+                                                    <span className="text-muted" style={{ fontSize: '0.65rem' }}>{order.slips[0].bank}</span>
+                                                )}
+                                            </div>
+                                        ) : order.slipUrl ? (
+                                            <button className="btn btn-sm btn-light border" onClick={() => setPreviewSlip({ slips: [{ url: order.slipUrl }], index: 0 })} title="ดูสลิป (เก่า)">
                                                 <i className="bi bi-image text-primary"></i>
                                             </button>
                                         ) : <span className="text-muted small">-</span>}
@@ -168,17 +191,58 @@ export default function AdminOrdersPage() {
                 </div>
             </div>
 
-            {/* Slip Preview Modal (Simple implementation) */}
-            {previewSlip && (
-                <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-75" style={{ zIndex: 1050 }} onClick={() => setPreviewSlip(null)}>
-                    <div className="bg-white p-2 rounded shadow-lg position-relative" onClick={e => e.stopPropagation()} style={{ maxWidth: '90%', maxHeight: '90%' }}>
-                        <button className="btn btn-light btn-sm position-absolute top-0 end-0 m-2 rounded-circle shadow" onClick={() => setPreviewSlip(null)}>
-                            <i className="bi bi-x-lg"></i>
-                        </button>
-                        <img src={previewSlip} alt="Slip" className="img-fluid rounded" style={{ maxHeight: '80vh' }} />
+            {/* Slip Preview Modal */}
+            {previewSlip && (() => {
+                const current = previewSlip.slips[previewSlip.index];
+                const total = previewSlip.slips.length;
+                return (
+                    <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-75" style={{ zIndex: 1050 }} onClick={() => setPreviewSlip(null)}>
+                        <div className="bg-white rounded shadow-lg position-relative d-flex flex-column" onClick={e => e.stopPropagation()} style={{ maxWidth: '95%', maxHeight: '92vh', width: '480px' }}>
+                            {/* Header */}
+                            <div className="d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
+                                <span className="fw-bold small">
+                                    <i className="bi bi-receipt me-1 text-success"></i>
+                                    หลักฐานการโอนเงิน
+                                    {total > 1 && <span className="text-muted ms-1">({previewSlip.index + 1}/{total})</span>}
+                                </span>
+                                <button className="btn-close btn-sm" onClick={() => setPreviewSlip(null)}></button>
+                            </div>
+                            {/* Image */}
+                            <div className="overflow-auto flex-grow-1 p-2 text-center">
+                                <img src={current.url} alt="Slip" className="img-fluid rounded" style={{ maxHeight: '65vh', objectFit: 'contain' }} />
+                            </div>
+                            {/* Info bar */}
+                            {(current.bank || current.amount || current.date) && (
+                                <div className="d-flex flex-wrap gap-2 justify-content-center px-3 py-2 border-top bg-light small text-muted">
+                                    {current.bank && <span><i className="bi bi-bank me-1"></i>{current.bank}</span>}
+                                    {current.amount && <span><i className="bi bi-currency-exchange me-1"></i>{current.amount.toLocaleString()} บาท</span>}
+                                    {current.date && <span><i className="bi bi-calendar me-1"></i>{current.date}{current.time ? ' ' + current.time : ''}</span>}
+                                </div>
+                            )}
+                            {/* Navigation */}
+                            {total > 1 && (
+                                <div className="d-flex justify-content-between align-items-center px-3 py-2 border-top">
+                                    <button
+                                        className="btn btn-sm btn-outline-secondary"
+                                        disabled={previewSlip.index === 0}
+                                        onClick={() => setPreviewSlip(p => p ? { ...p, index: p.index - 1 } : null)}
+                                    >
+                                        <i className="bi bi-chevron-left"></i> ก่อนหน้า
+                                    </button>
+                                    <span className="text-muted small">{previewSlip.index + 1} / {total}</span>
+                                    <button
+                                        className="btn btn-sm btn-outline-secondary"
+                                        disabled={previewSlip.index === total - 1}
+                                        onClick={() => setPreviewSlip(p => p ? { ...p, index: p.index + 1 } : null)}
+                                    >
+                                        ถัดไป <i className="bi bi-chevron-right"></i>
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                </div>
-            )}
+                );
+            })()}
         </div>
     );
 }

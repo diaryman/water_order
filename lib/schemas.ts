@@ -33,5 +33,13 @@ export const CreateOrderSchema = z.object({
         price: z.number().min(0, 'ราคาไม่ถูกต้อง')
     })).min(1, 'กรุณาเลือกสินค้าอย่างน้อย 1 รายการ'),
     total: z.number().min(0, 'ยอดรวมไม่ถูกต้อง'),
-    slipUrl: z.string().min(1, 'กรุณาอัพโหลดสลิปการชำระเงิน').optional()
+    slipUrl: z.string().optional(),
+    status: z.string().optional(),
+    slips: z.array(z.object({
+        url: z.string(),
+        bank: z.string(),
+        amount: z.number(),
+        date: z.string(),
+        time: z.string()
+    })).optional()
 });

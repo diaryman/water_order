@@ -43,3 +43,7 @@ next-env.d.ts
 /app/generated/prisma
 \n# database\n*.db\n*.db-journal\n
 dev.db
+
+# server credentials (ห้าม commit)
+.server-info
+public/uploads/

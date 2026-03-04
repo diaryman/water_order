@@ -83,7 +83,9 @@ export async function createOrder(data: {
     memberId: number,
     items: { productId: number, quantity: number, price: number }[],
     total: number,
-    slipUrl?: string
+    slipUrl?: string,
+    status?: string,
+    slips?: { url: string, bank: string, amount: number, date: string, time: string }[]
 }) {
     // Validate Input
     const validation = CreateOrderSchema.safeParse(data);
@@ -97,20 +99,34 @@ export async function createOrder(data: {
         throw new Error("ขณะนี้ปิดรับออเดอร์แล้ว")
     }
 
+    const transferSummary = data.slips
+        ? data.slips.map((s: any) => `${s.bank} (${s.amount}฿ ${s.date} ${s.time})`).join(' | ')
+        : undefined;
+
     const order = await prisma.order.create({
         data: {
             memberId: data.memberId,
             roundId: activeRound.id,
             total: data.total,
-            status: 'PENDING',
+            status: data.status || 'PENDING',
             slipUrl: data.slipUrl,
+            transferInfo: transferSummary,
             items: {
                 create: data.items.map(item => ({
                     productId: item.productId,
                     quantity: item.quantity,
                     price: item.price
                 }))
-            }
+            },
+            slips: data.slips ? {
+                create: data.slips.map((s: any) => ({
+                    url: s.url,
+                    bank: s.bank,
+                    amount: s.amount,
+                    date: s.date,
+                    time: s.time
+                }))
+            } : undefined
         }
     })
     revalidatePath('/') // Update homepage summary

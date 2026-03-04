@@ -55,17 +55,31 @@ model OrderRound {
 }
 
 model Order {
-  id        Int         @id @default(autoincrement())
-  memberId  Int
-  member    Member      @relation(fields: [memberId], references: [id])
-  roundId   Int?
-  round     OrderRound? @relation(fields: [roundId], references: [id])
-  total     Float
-  status    String      // "PENDING", "PAID", "COMPLETED"
-  slipUrl   String?
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  items     OrderItem[]
+  id           Int          @id @default(autoincrement())
+  memberId     Int
+  member       Member       @relation(fields: [memberId], references: [id])
+  roundId      Int?
+  round        OrderRound?  @relation(fields: [roundId], references: [id])
+  total        Float
+  status       String       // "PENDING", "PAID", "COMPLETED"
+  slipUrl      String?      // Keeps for back-compat or quick access
+  transferInfo String?      // Summary like "KBank, 20/02/2024, 15:30"
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  items        OrderItem[]
+  slips        SlipRecord[]
+}
+
+model SlipRecord {
+  id        Int      @id @default(autoincrement())
+  orderId   Int
+  order     Order    @relation(fields: [orderId], references: [id])
+  url       String
+  bank      String?
+  amount    Float?
+  date      String?
+  time      String?
+  createdAt DateTime @default(now())
 }
 
 model OrderItem {
