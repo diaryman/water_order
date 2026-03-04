@@ -227,15 +227,15 @@ export default function OrderPage() {
         return (
             <>
                 <StepNavigator step={step} />
-                <div className="container py-5">
+                <div className="container py-5 animate-fade-in">
                     {/* Organization Header */}
-                    <div className="text-center mb-5">
+                    <div className="text-center mb-5 animate-slide-up">
                         <h1 className="fw-bold text-primary mb-2">ระบบสั่งน้ำดื่ม</h1>
                         <p className="text-muted">สวัสดิการสำนักวิทยาการสารสนเทศ สำนักงานศาลปกครอง</p>
                     </div>
 
                     <div className="row justify-content-center">
-                        <div className="col-md-6 text-center">
+                        <div className="col-md-6 text-center animate-slide-up delay-100">
                             <h2 className="mb-4">ระบุผู้สั่งซื้อ</h2>
                             <div className="card card-custom p-4 text-start">
                                 <div className="mb-3">
@@ -290,15 +290,15 @@ export default function OrderPage() {
         return (
             <>
                 <StepNavigator step={step} />
-                <div className="container py-5">
-                    <div className="text-center mb-4">
+                <div className="container py-5 animate-fade-in">
+                    <div className="text-center mb-4 animate-slide-up">
                         <h2>เลือกสินค้า</h2>
                         <p className="text-muted">เลือกจำนวนที่ต้องการ</p>
                     </div>
 
                     <div className="row g-4 justify-content-center mb-5">
-                        {products.map(product => (
-                            <div key={product.id} className="col-md-4">
+                        {products.map((product, idx) => (
+                            <div key={product.id} className={`col-md-4 animate-slide-up delay-${(idx + 1) * 100 > 300 ? 300 : (idx + 1) * 100}`}>
                                 <div className="card card-custom h-100 p-3 text-center">
                                     <div className="mb-3">
                                         <i className={`bi ${product.type === 'SMALL' ? 'bi-droplet-fill text-info' : 'bi-bucket-fill text-primary'} display-1`}></i>
@@ -328,7 +328,7 @@ export default function OrderPage() {
                         ))}
                     </div>
 
-                    <div className="fixed-bottom bg-white border-top p-3 shadow-lg">
+                    <div className="fixed-bottom bg-white border-top p-3 shadow-lg animate-slide-up delay-300">
                         <div className="container d-flex justify-content-between align-items-center">
                             <div>
                                 <span className="text-muted small">รวมเป็นเงิน</span>
@@ -358,15 +358,15 @@ export default function OrderPage() {
         return (
             <>
                 <StepNavigator step={step} />
-                <div className="container py-5">
+                <div className="container py-5 animate-fade-in">
                     <div className="row justify-content-center">
                         <div className="col-md-7">
-                            <div className="text-center mb-4">
+                            <div className="text-center mb-4 animate-slide-up">
                                 <h2 className="fw-bold text-primary">ตรวจสอบรายการและชำระเงิน</h2>
                                 <p className="text-muted">ตรวจสอบข้อมูลให้ถูกต้องก่อนยืนยันสั่งซื้อ</p>
                             </div>
 
-                            <div className="row g-4">
+                            <div className="row g-4 animate-slide-up delay-100">
                                 <div className="col-lg-6">
                                     <div className="card card-custom p-4 mb-4 shadow-sm border-0 bg-white">
                                         <h5 className="fw-bold mb-3 d-flex align-items-center">
@@ -515,8 +515,8 @@ export default function OrderPage() {
         return (
             <>
                 <StepNavigator step={step} />
-                <div className="container py-5 text-center">
-                    <div className="my-5">
+                <div className="container py-5 text-center animate-fade-in">
+                    <div className="my-5 animate-slide-up delay-100">
                         <i className="bi bi-check-circle-fill text-success display-1 mb-4"></i>
                         <h1 className="mb-3">สั่งซื้อสำเร็จ!</h1>
                         <p className="lead text-muted mb-4">ขอบคุณที่ใช้บริการ ระบบได้รับข้อมูลการสั่งซื้อของท่านเรียบร้อยแล้ว</p>

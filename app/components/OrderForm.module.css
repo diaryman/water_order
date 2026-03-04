@@ -1,10 +1,15 @@
 .container {
     background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
     max-width: 500px;
     margin: 0 auto;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.container:hover {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
 }
 
 .section {
@@ -15,10 +20,18 @@
 }
 
 .select {
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
     font-size: 16px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    background-color: #fafafa;
+}
+
+.select:focus {
+    outline: none;
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
 }
 
 .products {
@@ -32,9 +45,18 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px;
+    padding: 12px 16px;
     background: #f8f9fa;
-    border-radius: 4px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.product:hover {
+    background: #ffffff;
+    border-color: #e0e0e0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transform: translateY(-2px);
 }
 
 .productInfo {
@@ -49,12 +71,29 @@
 }
 
 .controls button {
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     border: 1px solid #ccc;
     background: white;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
+    font-weight: bold;
+    color: #495057;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.controls button:hover {
+    background: #e9ecef;
+    border-color: #adb5bd;
+    color: #212529;
+    transform: scale(1.05);
+}
+
+.controls button:active {
+    transform: scale(0.95);
 }
 
 .footer {
@@ -73,14 +112,25 @@
 
 .submitBtn {
     width: 100%;
-    padding: 12px;
-    background-color: #0070f3;
+    padding: 14px;
+    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     font-size: 16px;
     font-weight: bold;
     cursor: pointer;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+    transition: all 0.3s ease;
+}
+
+.submitBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(13, 110, 253, 0.3);
+}
+
+.submitBtn:active {
+    transform: translateY(0);
 }
 
 .submitBtn:disabled {

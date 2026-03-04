@@ -617,3 +617,37 @@ export async function getAuditLogs(search?: string, date?: string) {
         take: 100
     });
 }
+
+// --- Site Settings (Theme) ---
+export async function getTheme(): Promise<string> {
+    const setting = await prisma.siteSetting.findUnique({
+        where: { key: 'theme' }
+    });
+    return setting?.value || 'ocean';
+}
+
+export async function setTheme(theme: string) {
+    const validThemes = ['ocean', 'sunrise', 'nature'];
+    if (!validThemes.includes(theme)) {
+        return { error: 'ธีมไม่ถูกต้อง' };
+    }
+    await prisma.siteSetting.upsert({
+        where: { key: 'theme' },
+        update: { value: theme },
+        create: { key: 'theme', value: theme }
+    });
+    try {
+        const headerStore = await headers();
+        const ip = headerStore.get('x-forwarded-for') || 'unknown';
+        await prisma.auditLog.create({
+            data: {
+                action: 'CHANGE_THEME',
+                details: `Theme: ${theme}`,
+                ip
+            }
+        });
+    } catch (e) {
+        console.error("Audit Log Error:", e);
+    }
+    return { success: true };
+}

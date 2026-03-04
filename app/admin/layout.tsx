@@ -44,6 +44,9 @@ export default function AdminLayout({
                             <li className="nav-item">
                                 <Link className="nav-link" href="/admin/orders">คำสั่งซื้อ</Link>
                             </li>
+                            <li className="nav-item">
+                                <Link className="nav-link" href="/admin/settings"><i className="bi bi-palette me-1"></i>ธีม</Link>
+                            </li>
                         </ul>
                         <form action={logout}>
                             <button className="btn btn-outline-light btn-sm rounded-pill px-3">

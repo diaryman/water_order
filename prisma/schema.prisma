@@ -93,3 +93,9 @@ model AuditLog {
   ip        String?
   createdAt DateTime @default(now())
 }
+
+model SiteSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}

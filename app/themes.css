@@ -1,0 +1,450 @@
+/* =============================================
+   THEME SYSTEM — 3 แบบ (สว่าง สะอาด ไม่ทึบ)
+   Ocean (ฟ้า-ขาว) | Sunrise (ส้ม-ขาว) | Nature (เขียว-ขาว)
+   ============================================= */
+
+/* ---------- OCEAN: ฟ้า-ขาว ---------- */
+[data-theme="ocean"] {
+    --t-bg: #dbeafe;
+    --t-surface: #ffffff;
+    --t-surface-2: #bfdbfe;
+    --t-border: #93c5fd;
+    --t-shadow: 0 2px 16px rgba(14, 165, 233, 0.12);
+    --t-shadow-hover: 0 6px 24px rgba(14, 165, 233, 0.22);
+    --t-primary: #0369a1;
+    --t-primary-dark: #075985;
+    --t-primary-light: #e0f2fe;
+    --t-heading: #0c4a6e;
+    --t-text: #1e3a5f;
+    --t-muted: #64748b;
+    --t-accent: #0369a1;
+    --t-stat1: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+    --t-stat2: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
+    --t-btn-bg: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+    --t-btn-text: #ffffff;
+    --t-badge-bg: #e0f2fe;
+    --t-badge-text: #0369a1;
+    --t-paid-badge-bg: #0369a1;
+    --t-paid-badge-text: #ffffff;
+    --t-table-head: #bfdbfe;
+    --t-table-head-text: #0c4a6e;
+    --t-radius: 14px;
+    --t-radius-sm: 8px;
+    --t-hero-bg: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+    --t-hero-text: #ffffff;
+}
+
+/* ---------- SUNRISE: ส้ม-ขาว ---------- */
+[data-theme="sunrise"] {
+    --t-bg: #ffedd5;
+    --t-surface: #ffffff;
+    --t-surface-2: #fed7aa;
+    --t-border: #fdba74;
+    --t-shadow: 0 2px 16px rgba(249, 115, 22, 0.12);
+    --t-shadow-hover: 0 6px 24px rgba(249, 115, 22, 0.22);
+    --t-primary: #c2410c;
+    --t-primary-dark: #9a3412;
+    --t-primary-light: #fff1e6;
+    --t-heading: #7c2d12;
+    --t-text: #431407;
+    --t-muted: #78716c;
+    --t-accent: #c2410c;
+    --t-stat1: linear-gradient(135deg, #f97316 0%, #c2410c 100%);
+    --t-stat2: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+    --t-btn-bg: linear-gradient(135deg, #c2410c 0%, #9a3412 100%);
+    --t-btn-text: #ffffff;
+    --t-badge-bg: #fff1e6;
+    --t-badge-text: #c2410c;
+    --t-paid-badge-bg: #c2410c;
+    --t-paid-badge-text: #ffffff;
+    --t-table-head: #fed7aa;
+    --t-table-head-text: #7c2d12;
+    --t-radius: 14px;
+    --t-radius-sm: 8px;
+    --t-hero-bg: linear-gradient(135deg, #f97316 0%, #c2410c 100%);
+    --t-hero-text: #ffffff;
+}
+
+/* ---------- NATURE: เขียว-ขาว ---------- */
+[data-theme="nature"] {
+    --t-bg: #dcfce7;
+    --t-surface: #ffffff;
+    --t-surface-2: #bbf7d0;
+    --t-border: #86efac;
+    --t-shadow: 0 2px 16px rgba(34, 197, 94, 0.12);
+    --t-shadow-hover: 0 6px 24px rgba(34, 197, 94, 0.22);
+    --t-primary: #15803d;
+    --t-primary-dark: #166534;
+    --t-primary-light: #dcfce7;
+    --t-heading: #14532d;
+    --t-text: #1a3d2b;
+    --t-muted: #6b7280;
+    --t-accent: #15803d;
+    --t-stat1: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+    --t-stat2: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+    --t-btn-bg: linear-gradient(135deg, #15803d 0%, #166534 100%);
+    --t-btn-text: #ffffff;
+    --t-badge-bg: #dcfce7;
+    --t-badge-text: #15803d;
+    --t-paid-badge-bg: #15803d;
+    --t-paid-badge-text: #ffffff;
+    --t-table-head: #bbf7d0;
+    --t-table-head-text: #14532d;
+    --t-radius: 14px;
+    --t-radius-sm: 8px;
+    --t-hero-bg: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+    --t-hero-text: #ffffff;
+}
+
+/* =============================================
+   THEMED COMPONENTS — เรียบง่าย สะอาดตา
+   ============================================= */
+
+/* Page wrapper */
+.theme-page {
+    background: var(--t-bg);
+    min-height: 100vh;
+    transition: background 0.3s ease;
+}
+
+/* Hero — ไม่ทึบ ใช้ gradient สว่าง */
+.theme-hero {
+    background: var(--t-hero-bg);
+    color: var(--t-hero-text);
+    padding: 2rem 2rem 1.75rem;
+    border-radius: var(--t-radius);
+    margin-bottom: 1.25rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    position: relative;
+    overflow: hidden;
+}
+
+/* subtle shine overlay */
+.theme-hero::after {
+    content: '';
+    position: absolute;
+    top: -30%;
+    right: -10%;
+    width: 50%;
+    height: 150%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.18) 0%, transparent 65%);
+    pointer-events: none;
+}
+
+/* Cards — สีขาว ขอบบาง เงาเบา */
+.theme-card {
+    background: var(--t-surface);
+    border: 1px solid var(--t-border);
+    border-radius: var(--t-radius);
+    box-shadow: var(--t-shadow);
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.theme-card:hover {
+    box-shadow: var(--t-shadow-hover);
+    transform: translateY(-2px);
+}
+
+/* Stat Cards — gradient พาสเทล ไม่ทึบ */
+.theme-stat {
+    background: var(--t-stat1);
+    border-radius: var(--t-radius);
+    padding: 2rem 1.25rem;
+    text-align: center;
+    color: #ffffff;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.theme-stat::after {
+    content: '';
+    position: absolute;
+    bottom: -20px;
+    right: -20px;
+    width: 100px;
+    height: 100px;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.theme-stat:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.theme-stat.s2 {
+    background: var(--t-stat2);
+}
+
+.stat-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    display: block;
+    opacity: 0.9;
+}
+
+.stat-num {
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -1px;
+}
+
+.stat-lbl {
+    font-size: 0.82rem;
+    font-weight: 500;
+    margin-top: 0.4rem;
+    opacity: 0.85;
+}
+
+/* Button */
+.theme-btn {
+    background: var(--t-btn-bg);
+    color: var(--t-btn-text);
+    border: none;
+    border-radius: var(--t-radius-sm);
+    padding: 0.6rem 1.4rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+}
+
+.theme-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+    opacity: 0.92;
+    color: var(--t-btn-text);
+    text-decoration: none;
+}
+
+/* Text helpers */
+.t-heading {
+    color: var(--t-heading);
+}
+
+.t-text {
+    color: var(--t-text);
+}
+
+.t-muted {
+    color: var(--t-muted);
+}
+
+.t-accent {
+    color: var(--t-accent);
+}
+
+/* Table */
+.theme-table thead tr {
+    background: var(--t-table-head);
+}
+
+.theme-table thead th {
+    color: var(--t-table-head-text);
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border: none;
+    padding: 11px 16px;
+}
+
+.theme-table tbody td {
+    color: var(--t-text);
+    border-color: var(--t-border);
+    padding: 11px 16px;
+    font-size: 0.88rem;
+    vertical-align: middle;
+}
+
+.theme-table tbody tr:hover td {
+    background: var(--t-primary-light);
+    transition: background 0.15s;
+}
+
+/* Select */
+.theme-select {
+    background: var(--t-surface);
+    color: var(--t-text);
+    border: 1.5px solid var(--t-border);
+    border-radius: var(--t-radius-sm);
+    padding: 0.4rem 0.85rem;
+    font-size: 0.88rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.theme-select:focus {
+    border-color: var(--t-accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--t-accent) 15%, transparent);
+}
+
+/* Section title */
+.section-title {
+    color: var(--t-heading);
+    font-weight: 700;
+    font-size: 1.05rem;
+    padding-bottom: 6px;
+    border-bottom: 2.5px solid var(--t-accent);
+    display: inline-block;
+}
+
+.round-open {
+    color: #22c55e;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.round-close {
+    color: var(--t-muted);
+    font-size: 0.85rem;
+}
+
+/* ---- Admin Theme Preview Cards ---- */
+.t-preview {
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.t-preview:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.10);
+}
+
+.t-preview.active {
+    border-color: var(--t-accent, #0ea5e9);
+    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.20);
+}
+
+.prev-ocean .t-preview.active {
+    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.20);
+}
+
+.prev-sunrise .t-preview.active {
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.20);
+}
+
+.prev-nature .t-preview.active {
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.20);
+}
+
+.t-prev-header {
+    padding: 18px 16px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #fff;
+}
+
+.t-prev-body {
+    padding: 10px 12px;
+}
+
+.t-prev-stat {
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+/* Ocean preview */
+.prev-ocean .t-prev-header {
+    background: linear-gradient(135deg, #38bdf8, #0284c7);
+}
+
+.prev-ocean .t-prev-body {
+    background: #f0f9ff;
+}
+
+.prev-ocean .t-prev-stat {
+    background: #e0f2fe;
+    color: #0284c7;
+}
+
+/* Sunrise preview */
+.prev-sunrise .t-prev-header {
+    background: linear-gradient(135deg, #fb923c, #ea580c);
+}
+
+.prev-sunrise .t-prev-body {
+    background: #fff9f5;
+}
+
+.prev-sunrise .t-prev-stat {
+    background: #fff1e6;
+    color: #ea580c;
+}
+
+/* Nature preview */
+.prev-nature .t-prev-header {
+    background: linear-gradient(135deg, #4ade80, #16a34a);
+}
+
+.prev-nature .t-prev-body {
+    background: #f0fdf4;
+}
+
+.prev-nature .t-prev-stat {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+/* Active border per theme */
+.t-preview.active {
+    border-color: #6366f1;
+}
+
+.prev-ocean .t-preview.active {
+    border-color: #0ea5e9;
+}
+
+.prev-sunrise .t-preview.active {
+    border-color: #f97316;
+}
+
+.prev-nature .t-preview.active {
+    border-color: #22c55e;
+}
+
+/* ---- Animations ---- */
+@keyframes fadeSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.anim-1 {
+    animation: fadeSlideUp 0.45s ease both;
+}
+
+.anim-2 {
+    animation: fadeSlideUp 0.45s 0.08s ease both;
+}
+
+.anim-3 {
+    animation: fadeSlideUp 0.45s 0.16s ease both;
+}
+
+.anim-4 {
+    animation: fadeSlideUp 0.45s 0.24s ease both;
+}
