@@ -208,8 +208,21 @@ export default function AdminOrdersPage() {
                                 <button className="btn-close btn-sm" onClick={() => setPreviewSlip(null)}></button>
                             </div>
                             {/* Image */}
-                            <div className="overflow-auto flex-grow-1 p-2 text-center">
-                                <img src={current.url} alt="Slip" className="img-fluid rounded" style={{ maxHeight: '65vh', objectFit: 'contain' }} />
+                            <div className="overflow-auto flex-grow-1 p-2 text-center d-flex flex-column align-items-center justify-content-center">
+                                <img
+                                    src={current.url}
+                                    alt="Slip"
+                                    className="img-fluid rounded border"
+                                    style={{ maxHeight: '65vh', objectFit: 'contain', backgroundColor: '#f8f9fa' }}
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                        (e.target as HTMLImageElement).nextElementSibling?.classList.remove('d-none');
+                                    }}
+                                />
+                                <div className="text-muted d-none py-5">
+                                    <i className="bi bi-image text-secondary mb-2" style={{ fontSize: '3rem' }}></i>
+                                    <p className="mb-0">ไฟล์รูปภาพสลิปสูญหายหรือไม่พบไฟล์<br /><small>(รูปภาพจากอดีตอาจไม่ได้ถูก backup ไว้ตอนอัปเดตระบบ)</small></p>
+                                </div>
                             </div>
                             {/* Info bar */}
                             {(current.bank || current.amount || current.date) && (
