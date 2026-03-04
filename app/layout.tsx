@@ -5,6 +5,7 @@ import "./globals.css";
 import "./themes.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import BootstrapClient from "./components/BootstrapClient";
+import Chatbot from "./components/Chatbot";
 
 import { ToastProvider } from "./components/ToastProvider";
 
@@ -30,6 +31,7 @@ export default function RootLayout({
         <ToastProvider>
           {children}
         </ToastProvider>
+        <Chatbot />
         <BootstrapClient />
       </body>
     </html>
