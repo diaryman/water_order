@@ -1,0 +1,247 @@
+npm verbose cli /opt/homebrew/Cellar/node/24.3.0/bin/node /opt/homebrew/bin/npm
+npm info using npm@11.4.2
+npm info using node@v24.3.0
+npm verbose title npm install
+npm verbose argv "install" "--loglevel" "verbose"
+npm verbose logfile logs-max:10 dir:/Users/teepakorn_s/.npm/_logs/2026-03-19T06_09_20_947Z-
+npm verbose logfile could not be created: Error: EPERM: operation not permitted, open '/Users/teepakorn_s/.npm/_logs/2026-03-19T06_09_20_947Z-debug-0.log'
+npm verbose logfile no logfile created
+npm verbose shrinkwrap failed to load node_modules/.package-lock.json EPERM: operation not permitted, stat '/Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules'
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@next/swc-win32-x64-msvc
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@next/swc-win32-arm64-msvc
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@next/swc-linux-x64-musl
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@next/swc-linux-x64-gnu
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@next/swc-linux-arm64-musl
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@next/swc-linux-arm64-gnu
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@next/swc-darwin-x64
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@img/sharp-win32-x64
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@img/sharp-win32-ia32
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@img/sharp-win32-arm64
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@img/sharp-wasm32
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@emnapi/runtime
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@img/sharp-linuxmusl-x64
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@img/sharp-linuxmusl-arm64
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@img/sharp-linux-x64
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@img/sharp-linux-s390x
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@img/sharp-linux-riscv64
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@img/sharp-linux-ppc64
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@img/sharp-linux-arm64
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@img/sharp-linux-arm
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@img/sharp-libvips-linuxmusl-x64
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@img/sharp-libvips-linuxmusl-arm64
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@img/sharp-libvips-linux-x64
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@img/sharp-libvips-linux-s390x
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@img/sharp-libvips-linux-riscv64
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@img/sharp-libvips-linux-ppc64
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@img/sharp-libvips-linux-arm64
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@img/sharp-libvips-linux-arm
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@img/sharp-libvips-darwin-x64
+npm verbose reify failed optional dependency /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2/node_modules/@img/sharp-darwin-x64
+npm verbose audit error FetchError: request to https://registry.npmjs.org/-/npm/v1/security/advisories/bulk failed, reason: getaddrinfo ENOTFOUND registry.npmjs.org
+npm verbose audit error     at ClientRequest.<anonymous> (/opt/homebrew/lib/node_modules/npm/node_modules/minipass-fetch/lib/index.js:130:14)
+npm verbose audit error     at ClientRequest.emit (node:events:507:28)
+npm verbose audit error     at emitErrorEvent (node:_http_client:104:11)
+npm verbose audit error     at _destroy (node:_http_client:898:9)
+npm verbose audit error     at onSocketNT (node:_http_client:918:5)
+npm verbose audit error     at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+npm verbose audit error   code: 'ENOTFOUND',
+npm verbose audit error   errno: 'ENOTFOUND',
+npm verbose audit error   syscall: 'getaddrinfo',
+npm verbose audit error   hostname: 'registry.npmjs.org',
+npm verbose audit error   type: 'system'
+npm verbose audit error }
+npm http cache safer-buffer@https://registry.npmjs.org/safer-buffer/-/safer-buffer-2.1.2.tgz 1ms (cache hit)
+npm http cache lodash-es@https://registry.npmjs.org/lodash-es/-/lodash-es-4.17.23.tgz 0ms (cache hit)
+npm http cache delaunator@https://registry.npmjs.org/delaunator/-/delaunator-5.0.1.tgz 0ms (cache hit)
+npm http cache @types/geojson@https://registry.npmjs.org/@types/geojson/-/geojson-7946.0.16.tgz 0ms (cache hit)
+npm http cache @types/sharp@https://registry.npmjs.org/@types/sharp/-/sharp-0.31.1.tgz 0ms (cache hit)
+npm http cache @types/d3-timer@https://registry.npmjs.org/@types/d3-timer/-/d3-timer-3.0.2.tgz 0ms (cache hit)
+npm http cache @types/d3-shape@https://registry.npmjs.org/@types/d3-shape/-/d3-shape-3.1.8.tgz 0ms (cache hit)
+npm http cache @types/d3-zoom@https://registry.npmjs.org/@types/d3-zoom/-/d3-zoom-3.0.8.tgz 0ms (cache hit)
+npm http cache @types/d3-time-format@https://registry.npmjs.org/@types/d3-time-format/-/d3-time-format-4.0.3.tgz 0ms (cache hit)
+npm http cache @types/d3-transition@https://registry.npmjs.org/@types/d3-transition/-/d3-transition-3.0.9.tgz 0ms (cache hit)
+npm http cache @types/d3-selection@https://registry.npmjs.org/@types/d3-selection/-/d3-selection-3.0.11.tgz 0ms (cache hit)
+npm http cache @types/d3-time@https://registry.npmjs.org/@types/d3-time/-/d3-time-3.0.4.tgz 0ms (cache hit)
+npm http cache @types/d3-scale@https://registry.npmjs.org/@types/d3-scale/-/d3-scale-4.0.9.tgz 0ms (cache hit)
+npm http cache @types/d3-random@https://registry.npmjs.org/@types/d3-random/-/d3-random-3.0.3.tgz 0ms (cache hit)
+npm http cache @types/d3-scale-chromatic@https://registry.npmjs.org/@types/d3-scale-chromatic/-/d3-scale-chromatic-3.1.0.tgz 0ms (cache hit)
+npm http cache @types/d3-polygon@https://registry.npmjs.org/@types/d3-polygon/-/d3-polygon-3.0.2.tgz 0ms (cache hit)
+npm http cache @types/d3-interpolate@https://registry.npmjs.org/@types/d3-interpolate/-/d3-interpolate-3.0.4.tgz 0ms (cache hit)
+npm http cache @types/d3-quadtree@https://registry.npmjs.org/@types/d3-quadtree/-/d3-quadtree-3.0.6.tgz 0ms (cache hit)
+npm http cache @types/d3-path@https://registry.npmjs.org/@types/d3-path/-/d3-path-3.1.1.tgz 0ms (cache hit)
+npm http cache @types/d3-fetch@https://registry.npmjs.org/@types/d3-fetch/-/d3-fetch-3.0.7.tgz 0ms (cache hit)
+npm http cache @types/d3-force@https://registry.npmjs.org/@types/d3-force/-/d3-force-3.0.10.tgz 0ms (cache hit)
+npm http cache @types/d3-geo@https://registry.npmjs.org/@types/d3-geo/-/d3-geo-3.1.0.tgz 0ms (cache hit)
+npm http cache @types/d3-drag@https://registry.npmjs.org/@types/d3-drag/-/d3-drag-3.0.7.tgz 0ms (cache hit)
+npm http cache @types/d3-dsv@https://registry.npmjs.org/@types/d3-dsv/-/d3-dsv-3.0.7.tgz 0ms (cache hit)
+npm http cache @types/d3-format@https://registry.npmjs.org/@types/d3-format/-/d3-format-3.0.4.tgz 0ms (cache hit)
+npm http cache @types/d3-hierarchy@https://registry.npmjs.org/@types/d3-hierarchy/-/d3-hierarchy-3.1.7.tgz 0ms (cache hit)
+npm http cache @types/d3@https://registry.npmjs.org/@types/d3/-/d3-7.4.3.tgz 0ms (cache hit)
+npm http cache @types/d3-delaunay@https://registry.npmjs.org/@types/d3-delaunay/-/d3-delaunay-6.0.4.tgz 0ms (cache hit)
+npm http cache @types/d3-contour@https://registry.npmjs.org/@types/d3-contour/-/d3-contour-3.0.6.tgz 0ms (cache hit)
+npm http cache @types/d3-color@https://registry.npmjs.org/@types/d3-color/-/d3-color-3.1.3.tgz 0ms (cache hit)
+npm http cache @types/d3-brush@https://registry.npmjs.org/@types/d3-brush/-/d3-brush-3.0.6.tgz 0ms (cache hit)
+npm http cache @types/d3-dispatch@https://registry.npmjs.org/@types/d3-dispatch/-/d3-dispatch-3.0.7.tgz 0ms (cache hit)
+npm http cache @types/d3-axis@https://registry.npmjs.org/@types/d3-axis/-/d3-axis-3.0.6.tgz 0ms (cache hit)
+npm http cache @types/d3-chord@https://registry.npmjs.org/@types/d3-chord/-/d3-chord-3.0.6.tgz 0ms (cache hit)
+npm http cache @types/bcryptjs@https://registry.npmjs.org/@types/bcryptjs/-/bcryptjs-2.4.6.tgz 0ms (cache hit)
+npm http cache @types/d3-array@https://registry.npmjs.org/@types/d3-array/-/d3-array-3.2.2.tgz 0ms (cache hit)
+npm http cache @iconify/types@https://registry.npmjs.org/@iconify/types/-/types-2.0.0.tgz 0ms (cache hit)
+npm http cache @chevrotain/types@https://registry.npmjs.org/@chevrotain/types/-/types-11.1.2.tgz 0ms (cache hit)
+npm http cache @types/d3-ease@https://registry.npmjs.org/@types/d3-ease/-/d3-ease-3.0.2.tgz 0ms (cache hit)
+npm http cache update-browserslist-db@https://registry.npmjs.org/update-browserslist-db/-/update-browserslist-db-1.2.3.tgz 0ms (cache hit)
+npm http fetch GET https://registry.npmjs.org/zod-validation-error attempt 1 failed with ENOTFOUND
+npm http cache ufo@https://registry.npmjs.org/ufo/-/ufo-1.6.3.tgz 0ms (cache hit)
+npm http fetch GET https://registry.npmjs.org/yallist attempt 1 failed with ENOTFOUND
+npm http cache tinyexec@https://registry.npmjs.org/tinyexec/-/tinyexec-1.0.2.tgz 0ms (cache hit)
+npm http fetch GET https://registry.npmjs.org/word-wrap attempt 1 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/yocto-queue attempt 1 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/which-builtin-type attempt 1 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/which-collection attempt 1 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/which-typed-array attempt 1 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/which-boxed-primitive attempt 1 failed with ENOTFOUND
+npm http cache points-on-curve@https://registry.npmjs.org/points-on-curve/-/points-on-curve-0.2.0.tgz 0ms (cache hit)
+npm http cache points-on-path@https://registry.npmjs.org/points-on-path/-/points-on-path-0.2.1.tgz 0ms (cache hit)
+npm http fetch GET https://registry.npmjs.org/uri-js attempt 1 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/unrs-resolver attempt 1 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/undici-types attempt 1 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/typed-array-length attempt 1 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/typed-array-byte-offset attempt 1 failed with ENOTFOUND
+npm http cache robust-predicates@https://registry.npmjs.org/robust-predicates/-/robust-predicates-3.0.2.tgz 0ms (cache hit)
+npm http fetch GET https://registry.npmjs.org/typed-array-byte-length attempt 1 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/unbox-primitive attempt 1 failed with ENOTFOUND
+npm http cache sharp@https://registry.npmjs.org/sharp/-/sharp-0.34.5.tgz 0ms (cache hit)
+npm http cache path-data-parser@https://registry.npmjs.org/path-data-parser/-/path-data-parser-0.1.0.tgz 0ms (cache hit)
+npm http cache pkg-types@https://registry.npmjs.org/pkg-types/-/pkg-types-1.3.1.tgz 0ms (cache hit)
+npm http cache mlly@https://registry.npmjs.org/mlly/-/mlly-1.8.0.tgz 0ms (cache hit)
+npm http cache internmap@https://registry.npmjs.org/internmap/-/internmap-2.0.3.tgz 0ms (cache hit)
+npm http cache dompurify@https://registry.npmjs.org/dompurify/-/dompurify-3.3.1.tgz 0ms (cache hit)
+npm http cache hachure-fill@https://registry.npmjs.org/hachure-fill/-/hachure-fill-0.5.2.tgz 0ms (cache hit)
+npm http cache d3-timer@https://registry.npmjs.org/d3-timer/-/d3-timer-3.0.1.tgz 0ms (cache hit)
+npm http cache d3-zoom@https://registry.npmjs.org/d3-zoom/-/d3-zoom-3.0.0.tgz 0ms (cache hit)
+npm http cache d3-time-format@https://registry.npmjs.org/d3-time-format/-/d3-time-format-4.1.0.tgz 0ms (cache hit)
+npm http cache d3-scale@https://registry.npmjs.org/d3-scale/-/d3-scale-4.0.2.tgz 0ms (cache hit)
+npm http cache d3-quadtree@https://registry.npmjs.org/d3-quadtree/-/d3-quadtree-3.0.1.tgz 0ms (cache hit)
+npm http cache d3-path@https://registry.npmjs.org/d3-path/-/d3-path-3.1.0.tgz 0ms (cache hit)
+npm http cache d3-polygon@https://registry.npmjs.org/d3-polygon/-/d3-polygon-3.0.1.tgz 0ms (cache hit)
+npm http cache d3-time@https://registry.npmjs.org/d3-time/-/d3-time-3.1.0.tgz 0ms (cache hit)
+npm http cache d3-random@https://registry.npmjs.org/d3-random/-/d3-random-3.0.1.tgz 0ms (cache hit)
+npm http cache d3-ease@https://registry.npmjs.org/d3-ease/-/d3-ease-3.0.1.tgz 0ms (cache hit)
+npm http cache d3-chord@https://registry.npmjs.org/d3-chord/-/d3-chord-3.0.1.tgz 0ms (cache hit)
+npm http cache d3-format@https://registry.npmjs.org/d3-format/-/d3-format-3.1.2.tgz 0ms (cache hit)
+npm http cache d3-drag@https://registry.npmjs.org/d3-drag/-/d3-drag-3.0.0.tgz 0ms (cache hit)
+npm http cache d3-brush@https://registry.npmjs.org/d3-brush/-/d3-brush-3.0.0.tgz 0ms (cache hit)
+npm http cache d3@https://registry.npmjs.org/d3/-/d3-7.9.0.tgz 0ms (cache hit)
+npm http cache d3-sankey@https://registry.npmjs.org/d3-sankey/-/d3-sankey-0.12.3.tgz 0ms (cache hit)
+npm http cache d3-force@https://registry.npmjs.org/d3-force/-/d3-force-3.0.0.tgz 0ms (cache hit)
+npm http cache d3-contour@https://registry.npmjs.org/d3-contour/-/d3-contour-4.0.2.tgz 0ms (cache hit)
+npm http cache d3-delaunay@https://registry.npmjs.org/d3-delaunay/-/d3-delaunay-6.0.4.tgz 0ms (cache hit)
+npm http cache d3-axis@https://registry.npmjs.org/d3-axis/-/d3-axis-3.0.0.tgz 0ms (cache hit)
+npm http cache d3-color@https://registry.npmjs.org/d3-color/-/d3-color-3.1.0.tgz 0ms (cache hit)
+npm http cache d3-dispatch@https://registry.npmjs.org/d3-dispatch/-/d3-dispatch-3.0.1.tgz 0ms (cache hit)
+npm http cache cose-base@https://registry.npmjs.org/cose-base/-/cose-base-1.0.3.tgz 0ms (cache hit)
+npm http cache commander@https://registry.npmjs.org/commander/-/commander-7.2.0.tgz 0ms (cache hit)
+npm http cache chevrotain-allstar@https://registry.npmjs.org/chevrotain-allstar/-/chevrotain-allstar-0.3.1.tgz 0ms (cache hit)
+npm http cache @types/trusted-types@https://registry.npmjs.org/@types/trusted-types/-/trusted-types-2.0.7.tgz 0ms (cache hit)
+npm http cache @emnapi/runtime@https://registry.npmjs.org/@emnapi/runtime/-/runtime-1.8.1.tgz 0ms (cache hit)
+npm http cache d3-fetch@https://registry.npmjs.org/d3-fetch/-/d3-fetch-3.0.1.tgz 0ms (cache hit)
+npm http cache commander@https://registry.npmjs.org/commander/-/commander-8.3.0.tgz 0ms (cache hit)
+npm http cache @antfu/install-pkg@https://registry.npmjs.org/@antfu/install-pkg/-/install-pkg-1.1.0.tgz 0ms (cache hit)
+npm http cache d3-path@https://registry.npmjs.org/d3-path/-/d3-path-1.0.9.tgz 0ms (cache hit)
+npm http cache internmap@https://registry.npmjs.org/internmap/-/internmap-1.0.1.tgz 0ms (cache hit)
+npm http fetch GET https://registry.npmjs.org/debug attempt 1 failed with ENOTFOUND
+npm http cache cose-base@https://registry.npmjs.org/cose-base/-/cose-base-2.2.0.tgz 0ms (cache hit)
+npm http cache marked@https://registry.npmjs.org/marked/-/marked-16.4.2.tgz 0ms (cache hit)
+npm http cache d3-dsv@https://registry.npmjs.org/d3-dsv/-/d3-dsv-3.0.1.tgz 0ms (cache hit)
+npm http cache bcryptjs@https://registry.npmjs.org/bcryptjs/-/bcryptjs-3.0.3.tgz 0ms (cache hit)
+npm http cache which@https://registry.npmjs.org/which/-/which-2.0.2.tgz 0ms (cache hit)
+npm http cache vscode-uri@https://registry.npmjs.org/vscode-uri/-/vscode-uri-3.1.0.tgz 0ms (cache hit)
+npm http cache vscode-languageserver-types@https://registry.npmjs.org/vscode-languageserver-types/-/vscode-languageserver-types-3.17.5.tgz 0ms (cache hit)
+npm http cache vscode-languageserver-textdocument@https://registry.npmjs.org/vscode-languageserver-textdocument/-/vscode-languageserver-textdocument-1.0.12.tgz 0ms (cache hit)
+npm http cache stylis@https://registry.npmjs.org/stylis/-/stylis-4.3.6.tgz 0ms (cache hit)
+npm http cache ts-dedent@https://registry.npmjs.org/ts-dedent/-/ts-dedent-2.2.0.tgz 0ms (cache hit)
+npm http cache rw@https://registry.npmjs.org/rw/-/rw-1.3.3.tgz 0ms (cache hit)
+npm http cache roughjs@https://registry.npmjs.org/roughjs/-/roughjs-4.6.6.tgz 0ms (cache hit)
+npm http cache package-manager-detector@https://registry.npmjs.org/package-manager-detector/-/package-manager-detector-1.6.0.tgz 0ms (cache hit)
+npm http cache pathe@https://registry.npmjs.org/pathe/-/pathe-2.0.3.tgz 0ms (cache hit)
+npm http cache vscode-jsonrpc@https://registry.npmjs.org/vscode-jsonrpc/-/vscode-jsonrpc-8.2.0.tgz 0ms (cache hit)
+npm http cache khroma@https://registry.npmjs.org/khroma/-/khroma-2.1.0.tgz 0ms (cache hit)
+npm http cache iconv-lite@https://registry.npmjs.org/iconv-lite/-/iconv-lite-0.6.3.tgz 0ms (cache hit)
+npm http cache d3-transition@https://registry.npmjs.org/d3-transition/-/d3-transition-3.0.1.tgz 0ms (cache hit)
+npm http cache d3-scale-chromatic@https://registry.npmjs.org/d3-scale-chromatic/-/d3-scale-chromatic-3.1.0.tgz 0ms (cache hit)
+npm http cache d3-selection@https://registry.npmjs.org/d3-selection/-/d3-selection-3.0.0.tgz 0ms (cache hit)
+npm http cache d3-shape@https://registry.npmjs.org/d3-shape/-/d3-shape-3.2.0.tgz 0ms (cache hit)
+npm http cache d3-interpolate@https://registry.npmjs.org/d3-interpolate/-/d3-interpolate-3.0.1.tgz 0ms (cache hit)
+npm http cache d3-hierarchy@https://registry.npmjs.org/d3-hierarchy/-/d3-hierarchy-3.1.2.tgz 0ms (cache hit)
+npm http cache cytoscape-cose-bilkent@https://registry.npmjs.org/cytoscape-cose-bilkent/-/cytoscape-cose-bilkent-4.1.0.tgz 0ms (cache hit)
+npm http cache confbox@https://registry.npmjs.org/confbox/-/confbox-0.1.8.tgz 0ms (cache hit)
+npm http cache cytoscape-fcose@https://registry.npmjs.org/cytoscape-fcose/-/cytoscape-fcose-2.2.0.tgz 0ms (cache hit)
+npm http cache d3-geo@https://registry.npmjs.org/d3-geo/-/d3-geo-3.1.1.tgz 0ms (cache hit)
+npm http cache d3-array@https://registry.npmjs.org/d3-array/-/d3-array-3.2.4.tgz 0ms (cache hit)
+npm http cache @chevrotain/utils@https://registry.npmjs.org/@chevrotain/utils/-/utils-11.1.2.tgz 0ms (cache hit)
+npm http cache @chevrotain/gast@https://registry.npmjs.org/@chevrotain/gast/-/gast-11.1.2.tgz 0ms (cache hit)
+npm http cache d3-array@https://registry.npmjs.org/d3-array/-/d3-array-2.12.1.tgz 0ms (cache hit)
+npm http cache @chevrotain/cst-dts-gen@https://registry.npmjs.org/@chevrotain/cst-dts-gen/-/cst-dts-gen-11.1.2.tgz 0ms (cache hit)
+npm http cache d3-shape@https://registry.npmjs.org/d3-shape/-/d3-shape-1.3.7.tgz 0ms (cache hit)
+npm http cache @chevrotain/regexp-to-ast@https://registry.npmjs.org/@chevrotain/regexp-to-ast/-/regexp-to-ast-11.1.2.tgz 0ms (cache hit)
+npm http cache @braintree/sanitize-url@https://registry.npmjs.org/@braintree/sanitize-url/-/sanitize-url-7.1.2.tgz 0ms (cache hit)
+npm http cache mime@https://registry.npmjs.org/mime/-/mime-4.1.0.tgz 0ms (cache hit)
+npm http cache vscode-languageserver-protocol@https://registry.npmjs.org/vscode-languageserver-protocol/-/vscode-languageserver-protocol-3.17.5.tgz 0ms (cache hit)
+npm http cache layout-base@https://registry.npmjs.org/layout-base/-/layout-base-1.0.2.tgz 0ms (cache hit)
+npm http cache dayjs@https://registry.npmjs.org/dayjs/-/dayjs-1.11.19.tgz 0ms (cache hit)
+npm http cache dagre-d3-es@https://registry.npmjs.org/dagre-d3-es/-/dagre-d3-es-7.0.13.tgz 0ms (cache hit)
+npm http cache @iconify/utils@https://registry.npmjs.org/@iconify/utils/-/utils-3.1.0.tgz 0ms (cache hit)
+npm http cache layout-base@https://registry.npmjs.org/layout-base/-/layout-base-2.0.1.tgz 1ms (cache hit)
+npm http cache uuid@https://registry.npmjs.org/uuid/-/uuid-11.1.0.tgz 0ms (cache hit)
+npm http cache katex@https://registry.npmjs.org/katex/-/katex-0.16.33.tgz 0ms (cache hit)
+npm http cache vscode-languageserver@https://registry.npmjs.org/vscode-languageserver/-/vscode-languageserver-9.0.1.tgz 0ms (cache hit)
+npm http cache langium@https://registry.npmjs.org/langium/-/langium-4.2.1.tgz 0ms (cache hit)
+npm http cache jose@https://registry.npmjs.org/jose/-/jose-6.1.3.tgz 0ms (cache hit)
+npm http cache @mermaid-js/parser@https://registry.npmjs.org/@mermaid-js/parser/-/parser-1.0.0.tgz 0ms (cache hit)
+npm http cache cytoscape@https://registry.npmjs.org/cytoscape/-/cytoscape-3.33.1.tgz 0ms (cache hit)
+npm http cache chevrotain@https://registry.npmjs.org/chevrotain/-/chevrotain-11.1.2.tgz 0ms (cache hit)
+npm http cache openai@https://registry.npmjs.org/openai/-/openai-6.25.0.tgz 0ms (cache hit)
+npm http cache mermaid@https://registry.npmjs.org/mermaid/-/mermaid-11.12.3.tgz 0ms (cache hit)
+npm http fetch GET https://registry.npmjs.org/zod-validation-error attempt 2 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/yallist attempt 2 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/yocto-queue attempt 2 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/which-builtin-type attempt 2 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/word-wrap attempt 2 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/which-typed-array attempt 2 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/which-collection attempt 2 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/which-boxed-primitive attempt 2 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/unrs-resolver attempt 2 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/uri-js attempt 2 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/undici-types attempt 2 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/typed-array-length attempt 2 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/typed-array-byte-offset attempt 2 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/typed-array-byte-length attempt 2 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/unbox-primitive attempt 2 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/debug attempt 2 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/zod-validation-error attempt 3 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/yallist attempt 3 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/yocto-queue attempt 3 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/which-builtin-type attempt 3 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/word-wrap attempt 3 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/which-typed-array attempt 3 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/which-collection attempt 3 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/which-boxed-primitive attempt 3 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/unrs-resolver attempt 3 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/uri-js attempt 3 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/undici-types attempt 3 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/typed-array-length attempt 3 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/typed-array-byte-offset attempt 3 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/typed-array-byte-length attempt 3 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/unbox-primitive attempt 3 failed with ENOTFOUND
+npm http fetch GET https://registry.npmjs.org/debug attempt 3 failed with ENOTFOUND
+npm verbose cwd /Users/teepakorn_s/Library/CloudStorage/OneDrive-TheOfficeoftheAdministrativeCourtsofThailand/05_Private/System/Water2
+npm verbose os Darwin 25.3.0
+npm verbose node v24.3.0
+npm verbose npm  v11.4.2
+npm error Exit handler never called!
+npm error This is an error with npm itself. Please report this error at:
+npm error   <https://github.com/npm/cli/issues>
+npm verbose exit 1
+npm verbose code 1
+npm error Log files were not written due to an error writing to the directory: /Users/teepakorn_s/.npm/_logs
+npm error You can rerun the command with `--loglevel=verbose` to see the logs in your terminal

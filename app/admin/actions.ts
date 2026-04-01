@@ -628,7 +628,7 @@ export async function getTheme(): Promise<string> {
 }
 
 export async function setTheme(theme: string) {
-    const validThemes = ['ocean', 'sunrise', 'nature'];
+    const validThemes = ['ocean', 'sunrise', 'nature', 'violet', 'rose', 'slate', 'dark-night', 'glass', 'mono', 'aurora', 'warm-paper'];
     if (!validThemes.includes(theme)) {
         return { error: 'ธีมไม่ถูกต้อง' };
     }
@@ -650,5 +650,100 @@ export async function setTheme(theme: string) {
     } catch (e) {
         console.error("Audit Log Error:", e);
     }
+    return { success: true };
+}
+
+// --- AI / Slip Verification Settings ---
+
+export type AiSettings = {
+    aiProvider: 'typhoon' | 'bedrock';
+    recipientName: string;
+    recipientAccountSuffix: string;
+    bedrockRegion: string;
+    bedrockModelId: string;
+    bedrockAccessKeyId: string;
+    bedrockSecretAccessKey: string;
+};
+
+const AI_SETTING_KEYS = [
+    'ai_provider',
+    'ai_recipient_name',
+    'ai_recipient_account_suffix',
+    'bedrock_region',
+    'bedrock_model_id',
+    'bedrock_access_key_id',
+    'bedrock_secret_access_key',
+] as const;
+
+const AI_DEFAULTS: AiSettings = {
+    aiProvider: 'typhoon',
+    recipientName: 'ฑีภากรณ์ สำเภา',
+    recipientAccountSuffix: '1991',
+    bedrockRegion: 'us-east-1',
+    bedrockModelId: 'anthropic.claude-haiku-4-5',
+    bedrockAccessKeyId: '',
+    bedrockSecretAccessKey: '',
+};
+
+export async function getAiSettings(): Promise<AiSettings> {
+    const rows = await prisma.siteSetting.findMany({
+        where: { key: { in: [...AI_SETTING_KEYS] } }
+    });
+    const map: Record<string, string> = {};
+    for (const row of rows) map[row.key] = row.value;
+
+    return {
+        aiProvider: (map['ai_provider'] as AiSettings['aiProvider']) || AI_DEFAULTS.aiProvider,
+        recipientName: map['ai_recipient_name'] || AI_DEFAULTS.recipientName,
+        recipientAccountSuffix: map['ai_recipient_account_suffix'] || AI_DEFAULTS.recipientAccountSuffix,
+        bedrockRegion: map['bedrock_region'] || AI_DEFAULTS.bedrockRegion,
+        bedrockModelId: map['bedrock_model_id'] || AI_DEFAULTS.bedrockModelId,
+        bedrockAccessKeyId: map['bedrock_access_key_id'] || AI_DEFAULTS.bedrockAccessKeyId,
+        bedrockSecretAccessKey: map['bedrock_secret_access_key'] || AI_DEFAULTS.bedrockSecretAccessKey,
+    };
+}
+
+export async function saveAiSettings(settings: AiSettings) {
+    const validProviders = ['typhoon', 'bedrock'];
+    if (!validProviders.includes(settings.aiProvider)) return { error: 'AI provider ไม่ถูกต้อง' };
+    if (!settings.recipientName?.trim()) return { error: 'กรุณากรอกชื่อผู้รับเงิน' };
+    if (!settings.recipientAccountSuffix?.trim()) return { error: 'กรุณากรอกเลขท้ายบัญชี' };
+    if (settings.aiProvider === 'bedrock') {
+        if (!settings.bedrockAccessKeyId?.trim()) return { error: 'กรุณากรอก AWS Access Key ID' };
+        if (!settings.bedrockSecretAccessKey?.trim()) return { error: 'กรุณากรอก AWS Secret Access Key' };
+    }
+
+    const entries: { key: string; value: string }[] = [
+        { key: 'ai_provider', value: settings.aiProvider },
+        { key: 'ai_recipient_name', value: settings.recipientName.trim() },
+        { key: 'ai_recipient_account_suffix', value: settings.recipientAccountSuffix.trim() },
+        { key: 'bedrock_region', value: settings.bedrockRegion || AI_DEFAULTS.bedrockRegion },
+        { key: 'bedrock_model_id', value: settings.bedrockModelId || AI_DEFAULTS.bedrockModelId },
+        { key: 'bedrock_access_key_id', value: settings.bedrockAccessKeyId?.trim() || '' },
+        { key: 'bedrock_secret_access_key', value: settings.bedrockSecretAccessKey?.trim() || '' },
+    ];
+
+    await Promise.all(entries.map(({ key, value }) =>
+        prisma.siteSetting.upsert({
+            where: { key },
+            update: { value },
+            create: { key, value }
+        })
+    ));
+
+    try {
+        const headerStore = await headers();
+        const ip = headerStore.get('x-forwarded-for') || 'unknown';
+        await prisma.auditLog.create({
+            data: {
+                action: 'UPDATE_AI_SETTINGS',
+                details: `Provider: ${settings.aiProvider}, Recipient: ${settings.recipientName}`,
+                ip
+            }
+        });
+    } catch (e) {
+        console.error('Audit Log Error:', e);
+    }
+
     return { success: true };
 }

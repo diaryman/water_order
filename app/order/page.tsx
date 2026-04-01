@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getGroups, getMembers, getProducts, getPaymentMethods } from '../actions';
-import { chatbotUploadSlipAndCreateOrder } from '@/app/chatbot-actions';
+import { chatbotUploadSlipAndCreateOrder, chatbotVerifySlip } from '@/app/chatbot-actions';
 import { uploadFile } from '@/app/admin/actions';
 import { useToast } from '@/app/components/ToastProvider';
 
@@ -64,11 +64,11 @@ export default function OrderPage() {
     const [selectedMemberId, setSelectedMemberId] = useState<number | ''>('');
     const [cart, setCart] = useState<{ [key: number]: number }>({}); // productId -> quantity
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [selectedSlip, setSelectedSlip] = useState<File | null>(null);
     const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
     const [createdOrder, setCreatedOrder] = useState<any>(null);
-    const [slipUrl, setSlipUrl] = useState<string | null>(null);
     const [uploadingSlip, setUploadingSlip] = useState(false);
+    const [analyzingSlip, setAnalyzingSlip] = useState(false);
+    const [uploadedSlips, setUploadedSlips] = useState<Array<{ url: string, amount: number, bank: string, date: string, time: string, name: string, isCorrectRecipient: boolean | null, recipientName: string, recipientAccount: string }>>([]);
 
     // QR Modal State
     const [showQrModal, setShowQrModal] = useState(false);
@@ -129,29 +129,52 @@ export default function OrderPage() {
         if (!file) return;
 
         setUploadingSlip(true);
+        setAnalyzingSlip(true);
         try {
             const formData = new FormData();
             formData.append('file', file);
-            const uploadedUrl = await uploadFile(formData);
-            if (uploadedUrl) {
-                setSelectedSlip(file);
-                setSlipUrl(uploadedUrl);
-                success('✅ อัพโหลดสลิปสำเร็จแล้ว');
+
+            const verifyResult = await chatbotVerifySlip(formData, calculateTotal());
+
+            if (verifyResult.success) {
+                const newSlip = {
+                    url: verifyResult.slipUrl as string,
+                    amount: Number(verifyResult.analysis.amount),
+                    bank: (verifyResult.analysis.bank as string) || 'ธนาคารทั่วไป',
+                    date: verifyResult.analysis.date as string,
+                    time: verifyResult.analysis.time as string,
+                    name: file.name,
+                    isCorrectRecipient: (verifyResult.analysis.isCorrectRecipient ?? null) as boolean | null,
+                    recipientName: (verifyResult.analysis.recipientName as string) || '',
+                    recipientAccount: (verifyResult.analysis.recipientAccount as string) || ''
+                };
+
+                setUploadedSlips(prev => [...prev, newSlip]);
+
+                if (verifyResult.analysis.isCorrectRecipient === false) {
+                    error(`⚠️ แจ้งเตือน: ผู้รับในสลิปไม่ตรง! พบ "${verifyResult.analysis.recipientName || verifyResult.analysis.recipientAccount}" - โปรดตรวจสอบสลิปอีกครั้ง`);
+                } else {
+                    success('✅ ตรวจสอบสลิปผ่านแล้ว');
+                }
             } else {
-                error('อัพโหลดสลิปไม่สำเร็จ กรุณาลองใหม่');
-                e.target.value = '';
+                let errorMsg = verifyResult.error || 'อัพโหลดและตรวจสอบสลิปไม่สำเร็จ';
+                if (verifyResult.analysis) {
+                    errorMsg += `\nข้อมูลที่พบ: ยอดเงิน ${verifyResult.analysis.amount || '-'}, วันเวลา ${verifyResult.analysis.date || '-'} ${verifyResult.analysis.time || '-'}`;
+                }
+                error(errorMsg);
             }
         } catch (err: any) {
             error('เกิดข้อผิดพลาด: ' + err.message);
-            e.target.value = '';
         } finally {
+            if (e.target) e.target.value = '';
             setUploadingSlip(false);
+            setAnalyzingSlip(false);
         }
     };
 
     const handleFinalSubmit = async () => {
         if (!selectedMemberId || totalItems === 0) return;
-        if (!slipUrl) {
+        if (uploadedSlips.length === 0) {
             error('กรุณาอัพโหลดสลิปก่อนยืนยันสั่งซื้อ');
             return;
         }
@@ -170,19 +193,18 @@ export default function OrderPage() {
                 });
 
             const result = await chatbotUploadSlipAndCreateOrder(
-                [{
-                    url: slipUrl,
-                    amount: calculateTotal(),
-                    bank: '',
-                    date: '',
-                    time: ''
-                }],
+                uploadedSlips.map(s => ({
+                    url: s.url,
+                    amount: s.amount,
+                    bank: s.bank,
+                    date: s.date,
+                    time: s.time
+                })),
                 {
                     memberId: Number(selectedMemberId),
                     items,
                     total: calculateTotal()
-                },
-                'PENDING'
+                }
             );
 
             if (result.success) {
@@ -422,35 +444,105 @@ export default function OrderPage() {
                                             {uploadingSlip ? (
                                                 <div className="p-3 bg-light rounded text-center mb-3">
                                                     <div className="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
-                                                    <span className="small">กำลังอัพโหลดสลิป...</span>
+                                                    <span className="small">กำลังตรวจสอบสลิป...</span>
                                                 </div>
-                                            ) : slipUrl ? (
-                                                <div className="alert alert-success p-2 small text-start mb-3 border-0 shadow-sm">
-                                                    <div className="d-flex align-items-center mb-1">
-                                                        <i className="bi bi-check-circle-fill text-success me-2"></i>
-                                                        <span className="fw-bold">อัพโหลดสลิปสำเร็จ!</span>
+                                            ) : null}
+
+                                            {uploadedSlips.map((slip, idx) => (
+                                                <div key={idx} className={`alert p-3 small text-start mb-3 border-0 shadow-sm ${slip.isCorrectRecipient === false ? 'alert-danger' : 'alert-success'}`}>
+                                                    <div className="d-flex align-items-center mb-2">
+                                                        <i className={`bi me-2 fs-5 ${slip.isCorrectRecipient === false ? 'bi-exclamation-triangle-fill text-danger' : 'bi-check-circle-fill text-success'}`}></i>
+                                                        <span className={`fw-bold fs-6 ${slip.isCorrectRecipient === false ? 'text-danger' : 'text-success'}`}>ได้รับสลิปใบที่ {idx + 1} แล้ว</span>
                                                     </div>
-                                                    <div className="ps-4">
-                                                        <div className="text-muted small">{selectedSlip?.name}</div>
+
+                                                    <div className="bg-white p-2 rounded border-start border-4 border-success ms-4 mb-2">
+                                                        <div className="d-flex justify-content-between mb-1">
+                                                            <span className="text-muted"><i className="bi bi-bank me-1"></i> ธนาคาร</span>
+                                                            <span className="fw-bold">{slip.bank}</span>
+                                                        </div>
+                                                        <div className="d-flex justify-content-between mb-1">
+                                                            <span className="text-muted"><i className="bi bi-cash me-1"></i> ยอดโอนในสลิป</span>
+                                                            <span className="fw-bold text-primary">{slip.amount.toLocaleString()} ฿</span>
+                                                        </div>
+                                                        <div className="d-flex justify-content-between mb-1">
+                                                            <span className="text-muted"><i className="bi bi-calendar3 me-1"></i> วันเวลา</span>
+                                                            <span className="fw-bold">{slip.date} {slip.time}</span>
+                                                        </div>
+                                                        <div className="d-flex justify-content-between">
+                                                            <span className="text-muted"><i className="bi bi-person-check me-1"></i> ผู้รับ</span>
+                                                            <span className={`fw-bold small ${slip.isCorrectRecipient === false ? 'text-danger' : slip.isCorrectRecipient === true ? 'text-success' : 'text-muted'}`}>
+                                                                {slip.isCorrectRecipient === true && <><i className="bi bi-check-circle-fill me-1"></i>{slip.recipientName || 'ถูกต้อง'}</>}
+                                                                {slip.isCorrectRecipient === false && <><i className="bi bi-x-circle-fill me-1"></i>{slip.recipientName || 'ไม่ตรง'} ⚠️</>}
+                                                                {slip.isCorrectRecipient === null && <><i className="bi bi-question-circle me-1"></i>อ่านไม่ได้</>}
+                                                            </span>
+                                                        </div>
                                                     </div>
-                                                    <button className="btn btn-link btn-sm p-0 mt-2 text-decoration-none" onClick={() => { setSlipUrl(null); setSelectedSlip(null); }}>
-                                                        <i className="bi bi-arrow-repeat me-1"></i> เปลี่ยนรูปสลิป
-                                                    </button>
+
+                                                    {slip.isCorrectRecipient === false && (
+                                                        <div className="alert alert-danger p-2 mt-1 ms-4 mb-0">
+                                                            <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                                                            <small><strong>ผู้รับไม่ตรง!</strong> พบชื่อ/เลขบัญชี <strong>{slip.recipientAccount || slip.recipientName}</strong> - กรุณาตรวจสอบสลิปอีกครั้งหรือติดต่อแอดมิน</small>
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            ) : (
-                                                <div className="input-group input-group-sm">
-                                                    <input
-                                                        type="file"
-                                                        className="form-control"
-                                                        accept="image/*"
-                                                        onChange={handleFileChange}
-                                                        id="slipUpload"
-                                                    />
-                                                    <label className="input-group-text" htmlFor="slipUpload"><i className="bi bi-upload"></i></label>
-                                                </div>
-                                            )}
-                                            {!slipUrl && !uploadingSlip && (
-                                                <p className="text-muted mt-1 text-start" style={{ fontSize: '0.7rem' }}>* แนบสลิปโอนเงินเพื่อยืนยันการชำระ</p>
+                                            ))}
+
+                                            {uploadedSlips.length > 0 && (() => {
+                                                const totalPaid = uploadedSlips.reduce((sum, s) => sum + s.amount, 0);
+                                                const remaining = calculateTotal() - totalPaid;
+
+                                                if (Math.abs(remaining) < 0.01) {
+                                                    return (
+                                                        <div className="alert alert-success p-2 mt-2 d-flex mb-3 align-items-center">
+                                                            <i className="bi bi-check-circle-fill text-success fs-4 me-2"></i>
+                                                            <small className="fw-bold text-success">ยอดเงินครบถ้วนพอดีเป๊ะ! ท่านสามารถกดยืนยันออเดอร์ได้เลยค่ะ</small>
+                                                        </div>
+                                                    );
+                                                } else if (remaining > 0) {
+                                                    return (
+                                                        <div className="alert alert-warning p-2 mt-3 mb-3 text-start">
+                                                            <div className="d-flex mb-2">
+                                                                <i className="bi bi-exclamation-triangle-fill text-warning flex-shrink-0 mt-1 me-2"></i>
+                                                                <small>
+                                                                    <strong>ยอดเงินยังไม่ครบ:</strong> รวมทุกสลิปได้ <span className="fw-bold">{totalPaid} ฿</span> แต่ยอดออเดอร์คือ <span className="fw-bold">{calculateTotal()} ฿</span><br />
+                                                                    ยังขาดอีก <span className="text-danger fw-bold">{remaining.toFixed(2)} ฿</span> — กรุณาอัพโหลดสลิปใบถัดไปเพื่อให้ยอดรวมครบถ้วน
+                                                                </small>
+                                                            </div>
+                                                            <div className="input-group input-group-sm mb-2">
+                                                                <input type="file" className="form-control" accept="image/*" onChange={handleFileChange} disabled={uploadingSlip} />
+                                                                <label className="input-group-text"><i className="bi bi-upload"></i></label>
+                                                            </div>
+                                                            <button className="btn btn-outline-secondary btn-sm w-100" onClick={() => setUploadedSlips([])}>
+                                                                <i className="bi bi-trash me-1"></i> ล้างสลิปทั้งหมดและเริ่มใหม่
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                } else {
+                                                    return (
+                                                        <div className="alert alert-info p-2 mt-3 mb-3 text-start">
+                                                            <div className="d-flex mb-2">
+                                                                <i className="bi bi-info-circle-fill text-info flex-shrink-0 mt-1 me-2"></i>
+                                                                <small>
+                                                                    <strong>แจ้งเตือนยอดเกิน:</strong> ยอดเงินรวมโอนเกินมา <span className="text-primary fw-bold">{Math.abs(remaining).toFixed(2)} ฿</span> (ยอดออเดอร์ทั้งหมด {calculateTotal()} ฿)<br />
+                                                                    ท่านสามารถยืนยันดำเนินการต่อได้เลย และติดต่อแอดมินเพื่อขอรับส่วนเกินคืนในภายหลัง
+                                                                </small>
+                                                            </div>
+                                                            <button className="btn btn-outline-danger btn-sm w-100" onClick={() => setUploadedSlips([])}>
+                                                                <i className="bi bi-arrow-repeat me-1"></i> อัพโหลดสลิปใหม่ทั้งหมด
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                }
+                                            })()}
+
+                                            {uploadedSlips.length === 0 && !uploadingSlip && (
+                                                <>
+                                                    <div className="input-group input-group-sm mb-1">
+                                                        <input type="file" className="form-control" accept="image/*" onChange={handleFileChange} id="slipUpload" />
+                                                        <label className="input-group-text" htmlFor="slipUpload"><i className="bi bi-upload"></i></label>
+                                                    </div>
+                                                    <p className="text-muted mt-1 text-start" style={{ fontSize: '0.7rem' }}>* แนบสลิปโอนเงินเพื่อยืนยันการชำระ</p>
+                                                </>
                                             )}
                                         </div>
                                     </div>
@@ -461,7 +553,11 @@ export default function OrderPage() {
                                 <button
                                     className="btn btn-primary btn-lg btn-custom shadow py-3 fw-bold"
                                     onClick={handleFinalSubmit}
-                                    disabled={isSubmitting}
+                                    disabled={isSubmitting || (() => {
+                                        const totalPaid = uploadedSlips.reduce((sum, s) => sum + s.amount, 0);
+                                        const hasIncorrectRecipient = uploadedSlips.some(s => s.isCorrectRecipient === false);
+                                        return hasIncorrectRecipient || (uploadedSlips.length > 0 && (calculateTotal() - totalPaid) > 0.01);
+                                    })()}
                                 >
                                     {isSubmitting ? (
                                         <>

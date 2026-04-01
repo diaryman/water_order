@@ -103,12 +103,20 @@ export async function createOrder(data: {
         ? data.slips.map((s: any) => `${s.bank} (${s.amount}฿ ${s.date} ${s.time})`).join(' | ')
         : undefined;
 
+    let finalStatus = data.status || 'PENDING';
+    const totalPaidFromSlips = data.slips ? data.slips.reduce((sum: number, s: any) => sum + Number(s.amount || 0), 0) : 0;
+
+    // Auto-approve if paid amount covers the order
+    if (totalPaidFromSlips >= data.total) { // Accept if equal or overpaid
+        finalStatus = 'PAID';
+    }
+
     const order = await prisma.order.create({
         data: {
             memberId: data.memberId,
             roundId: activeRound.id,
             total: data.total,
-            status: data.status || 'PENDING',
+            status: finalStatus,
             slipUrl: data.slipUrl,
             transferInfo: transferSummary,
             items: {

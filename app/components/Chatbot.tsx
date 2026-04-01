@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { askNongNam, chatbotUploadSlipAndCreateOrder, getChatbotData } from '@/app/chatbot-actions'
+import { askNongNam, chatbotUploadSlipAndCreateOrder, getChatbotData, chatbotVerifySlip } from '@/app/chatbot-actions'
 import { uploadFile } from '@/app/admin/actions'
 import mermaid from 'mermaid'
 
@@ -55,7 +55,7 @@ export default function Chatbot() {
     const [selectedMember, setSelectedMember] = useState<{ id: number; name: string } | null>(null)
     const [cart, setCart] = useState<Record<number, number>>({})
     const [pendingOrder, setPendingOrder] = useState<OrderData | null>(null)
-    const [uploadedSlips, setUploadedSlips] = useState<{ url: string; amount: number; bank: string; date: string; time: string }[]>([])
+    const [uploadedSlips, setUploadedSlips] = useState<{ url: string; amount: number; bank: string; date: string; time: string; isCorrectRecipient?: boolean | null; isCorrectAmount?: boolean | null }[]>([])
 
     // UI enhancements state
     const [memberSearchTerm, setMemberSearchTerm] = useState('')
@@ -236,7 +236,7 @@ export default function Chatbot() {
         if (!file || !pendingOrder) return
 
         if (!file.type.startsWith('image/')) {
-            addBotMessage('❌ กรุณาส่งที่รูปภาพที่เป็นสลิปการโอนเงินเท่านั้นนะคะ')
+            addBotMessage('❌ กรุณาส่งรูปภาพที่เป็นสลิปการโอนเงินเท่านั้นนะคะ')
             return
         }
         if (file.size > 5 * 1024 * 1024) {
@@ -246,38 +246,91 @@ export default function Chatbot() {
 
         const previewUrl = URL.createObjectURL(file)
         setMessages(prev => [...prev, {
-            role: 'user', content: `📎 ส่งสลิปแนบออเดอร์`, type: 'slip_preview', imageUrl: previewUrl,
+            role: 'user', content: `📎 ส่งสลิปใบที่ ${uploadedSlips.length + 1}`, type: 'slip_preview', imageUrl: previewUrl,
         }])
 
         setIsLoading(true)
-        addBotMessage('⏳ น้องน้ำกำลังรับสลิปให้อยู่นะคะ...')
+        addBotMessage('⏳ น้องน้ำกำลังตรวจสอบสลิปให้อยู่นะคะ...')
 
         try {
             const formData = new FormData()
             formData.append('file', file)
 
-            const slipUrl = await uploadFile(formData)
+            const verifyResult = await chatbotVerifySlip(formData, pendingOrder.total)
 
             setMessages(prev => prev.slice(0, -1))
 
-            if (!slipUrl) {
-                addBotMessage('❌ อัพโหลดสลิปไม่สำเร็จค่ะ กรุณาลองใหม่อีกครั้งนะคะ')
+            if (!verifyResult.success) {
+                let errorMsg = `⚠️ ${verifyResult.error}`
+                if (verifyResult.analysis) {
+                    errorMsg += `\n\n🔍 **ข้อมูลที่น้องน้ำพบเบื้องต้น:**\n💰 ยอดเงิน: ${verifyResult.analysis.amount || '-'}\n🏦 ธนาคาร: ${verifyResult.analysis.bank || '-'}\n📅 วันเวลา: ${verifyResult.analysis.date || '-'} ${verifyResult.analysis.time || '-'}`
+                }
+                addBotMessage(errorMsg)
                 return
             }
 
+            const { slipUrl, analysis } = verifyResult
             const newSlip = {
-                url: slipUrl,
-                amount: pendingOrder.total,
-                bank: '',
-                date: '',
-                time: ''
+                url: slipUrl as string,
+                amount: Number(analysis.amount),
+                bank: (analysis.bank as string) || 'ธนาคารทั่วไป',
+                date: analysis.date as string,
+                time: analysis.time as string,
+                isCorrectRecipient: analysis.isCorrectRecipient,
+                isCorrectAmount: analysis.isCorrectAmount ?? null,
             }
 
             const newSlips = [...uploadedSlips, newSlip]
             setUploadedSlips(newSlips)
 
-            addBotMessage(`✅ **ได้รับสลิปเรียบร้อยค่ะ!** น้องน้ำกำลังบันทึกออเดอร์ให้นะคะ...`)
-            await createFinalOrder(newSlips, 'PENDING')
+            const totalPaid = newSlips.reduce((sum, s) => sum + s.amount, 0)
+            const remaining = pendingOrder.total - totalPaid
+            const hasIncorrectRecipient = newSlips.some(s => s.isCorrectRecipient === false)
+
+            let botMsg = `✅ **ตรวจสอบสลิปสำเร็จ!**\n🏦 ธนาคาร: ${newSlip.bank}\n💰 ยอดเงินในใบนี้: ${newSlip.amount} บาท\n📅 วันเวลา: ${newSlip.date} ${newSlip.time}`
+
+            // Recipient check message
+            const isCorrectRecipient = analysis.isCorrectRecipient;
+            if (isCorrectRecipient === true) {
+                botMsg += `\n✅ ผู้รับ: ${analysis.recipientName || ''} (ถูกต้อง)`;
+            } else if (isCorrectRecipient === false) {
+                botMsg += `\n⚠️ **แจ้งเตือน: ผู้รับไม่ตรง!** พบ “${analysis.recipientName || analysis.recipientAccount || '-'}” บัญชี ${analysis.recipientAccount || '-'}\nกรุณาตรวจสอบสลิปอีกครั้ง หรือติดต่อแอดมินด่วนค่ะ`;
+            } else {
+                botMsg += `\n❓ ไม่สามาถอ่านชื่อผู้รับเงินจากสลิป โปรดตรวจสอบด้วยตนเองด้วยนะคะ`;
+            }
+
+            // Amount check message
+            const isCorrectAmount = analysis.isCorrectAmount;
+            if (isCorrectAmount === true) {
+                botMsg += `\n✅ ยอดเงิน: ${newSlip.amount} บาท (ตรงกับยอดสั่ง ${pendingOrder.total} บาท)`;
+            } else if (isCorrectAmount === false) {
+                botMsg += `\n⚠️ **ยอดเงินในสลิป ${newSlip.amount} บาท ไม่ตรงกับยอดออเดอร์ ${pendingOrder.total} บาท**`;
+            }
+
+            botMsg += `\n\n`;
+
+            if (hasIncorrectRecipient) {
+                botMsg += `❌ ไม่สามารถบันทึกออเดอร์ได้เนื่องจากพบสลิปที่ผู้รับเงินไม่ถูกต้อง กรุณาอัพโหลดสลิปที่ถูกต้องใหม่ทั้งหมดนะคะ`
+                setMessages(prev => [...prev, {
+                    role: 'bot',
+                    content: botMsg,
+                    type: 'excess_confirm' // Reuse the UI to show resubmit buttons but not the proceed button
+                }])
+            } else if (Math.abs(remaining) < 0.01) {
+                botMsg += `✨ ยอดเงินชำระครบถ้วนพอดีเป๊ะเลยค่ะ! น้องน้ำกำลังบันทึกออเดอร์ให้นะคะ...`
+                addBotMessage(botMsg)
+                await createFinalOrder(newSlips, 'PAID')
+            } else if (remaining > 0) {
+                botMsg += `⚠️ **ยอดเงินยังขาดอีก ${remaining.toFixed(2)} บาท** ค่ะ\n\nรวมทุกสลิปได้ **${totalPaid} บาท** แต่ยอดออเดอร์คือ **${pendingOrder.total} บาท** — กรุณาส่งสลิปใบที่ ${newSlips.length + 1} มาให้น้องน้ำเพื่อให้ยอดครบถ้วนนะคะ 🙏`
+                addBotMessage(botMsg)
+            } else {
+                botMsg += `💡 **ยอดโอนเกินมา ${Math.abs(remaining).toFixed(2)} บาท** ค่ะ (ยอดออเดอร์ทั้งหมด ${pendingOrder.total} บาท)\n\nต้องการยืนยันดำเนินการต่อด้วยยอดนี้เลยไหมคะ? หรือจะอัพโหลดสลิปใบใหม่?\n(หากยืนยันยอดเกิน ท่านสามารถติดต่อแอดมินเพื่อขอรับเงินส่วนเกินคืนได้ในภายหลังค่ะ)`
+                setMessages(prev => [...prev, {
+                    role: 'bot',
+                    content: botMsg,
+                    type: 'excess_confirm'
+                }])
+            }
         } catch (e: any) {
             addBotMessage(`❌ เกิดข้อผิดพลาด: ${e.message}`)
         } finally {
@@ -441,11 +494,16 @@ export default function Chatbot() {
 
                     {m.type === 'excess_confirm' && (
                         <div className="mt-3">
-                            <button className="btn btn-sm btn-success w-100 mb-2 fw-bold rounded-pill" onClick={() => createFinalOrder(uploadedSlips, 'PENDING')}>
-                                ยืนยันดำเนินการต่อ (ยอดเกิน)
-                            </button>
-                            <button className="btn btn-sm btn-outline-primary w-100 fw-bold rounded-pill" onClick={() => fileInputRef.current?.click()}>
-                                ส่งสลิปใบที่ {uploadedSlips.length + 1} เพิ่ม
+                            {uploadedSlips.some(s => s.isCorrectRecipient === false) ? null : (
+                                <button className="btn btn-sm btn-success w-100 mb-2 fw-bold rounded-pill" onClick={() => createFinalOrder(uploadedSlips, 'PENDING')}>
+                                    <i className="bi bi-check-circle me-1"></i> ยืนยันดำเนินการต่อ
+                                </button>
+                            )}
+                            <button className="btn btn-sm btn-outline-danger w-100 fw-bold rounded-pill" onClick={() => {
+                                setUploadedSlips([]); // รีเซ็ตสลิปเดิมทิ้ง
+                                fileInputRef.current?.click();
+                            }}>
+                                <i className="bi bi-arrow-repeat me-1"></i> อัพโหลดสลิปใหม่ทั้งหมด
                             </button>
                         </div>
                     )}

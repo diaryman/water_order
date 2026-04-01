@@ -1,8 +1,10 @@
 'use server'
 
 import { getCurrentRound, getSummary, getGroups, getProducts, getPaymentMethods, createOrder } from '@/app/actions';
-import { uploadSlip } from '@/app/admin/actions';
+import { uploadSlip, getAiSettings } from '@/app/admin/actions';
 import prisma from '@/lib/prisma';
+import sharp from 'sharp';
+import { BedrockRuntimeClient, InvokeModelCommand } from '@aws-sdk/client-bedrock-runtime';
 
 const API_URL = process.env.OPENAI_BASE_URL || 'http://thaillm.or.th/api/pathumma/v1';
 const API_KEY = process.env.OPENAI_API_KEY || '';
@@ -39,74 +41,310 @@ export async function getChatbotData() {
     };
 }
 
-// Analyze slip with Vision
-export async function analyzeSlip(imageBuffer: Buffer, expectedTotal: number) {
+const TYPHOON_API_KEY = process.env.TYPHOON_API_KEY || 'sk-jGBenCBJHPIjkmNlDiLFINpOvgIGxAhw0tCNtfsU2flzfiL0';
+
+// Preprocess image: convert to grayscale + normalize contrast + sharpen for better OCR
+async function preprocessImageForOCR(buffer: Buffer): Promise<Buffer> {
     try {
-        const base64Image = imageBuffer.toString('base64');
-        const response = await fetch(`${API_URL}/chat/completions`, {
+        return await sharp(buffer)
+            .grayscale()    // removes colored backgrounds (red/blue themes)
+            .normalize()    // stretches contrast automatically
+            .sharpen()      // sharpens text edges
+            .jpeg({ quality: 95 })
+            .toBuffer();
+    } catch (e) {
+        console.warn('[OCR] Preprocessing failed, using original image:', e);
+        return buffer;
+    }
+}
+
+// Single OCR attempt with a given task_type
+// Parameters mirror the official Typhoon OCR playground example exactly
+async function tryOCRWithTaskType(imageBuffer: Buffer, taskType: string, mimeType: string = 'image/jpeg', ext: string = 'slip.jpg'): Promise<string | null> {
+    const formData = new FormData();
+    formData.append('file', new Blob([new Uint8Array(imageBuffer)], { type: mimeType }), ext);
+    formData.append('model', 'typhoon-ocr-preview');
+    formData.append('task_type', taskType);
+    formData.append('max_tokens', '16384');
+    formData.append('temperature', '0.1');
+    formData.append('top_p', '0.6');
+    formData.append('repetition_penalty', '1.2');
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+    let response;
+    try {
+        response = await fetch('https://api.opentyphoon.ai/v1/ocr', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${TYPHOON_API_KEY}` },
+            body: formData,
+            signal: controller.signal
+        });
+    } catch (error: any) {
+        clearTimeout(timeoutId);
+        console.error(`[OCR] task_type=${taskType} Network/Timeout Error:`, error.message);
+        return null;
+    }
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+        console.error(`[OCR] task_type=${taskType} Error (${response.status}):`, await response.text());
+        return null;
+    }
+
+    const data = await response.json();
+    let extractedText = '';
+    for (const pageResult of data.results || []) {
+        if (pageResult.success && pageResult.message) {
+            const content = pageResult.message.choices?.[0]?.message?.content || '';
+            try {
+                const parsedContent = JSON.parse(content);
+                extractedText += (parsedContent.natural_text || content) + '\n';
+            } catch {
+                extractedText += content + '\n';
+            }
+        } else if (!pageResult.success) {
+            console.error(`[OCR] Page error (${pageResult.filename || 'unknown'}):`, pageResult.error || 'Unknown error');
+        }
+    }
+    return extractedText.trim() || null;
+}
+
+export async function extractTextFromSlip(imageBuffer: Buffer, mimeType: string = 'image/jpeg') {
+    // Normalize MIME type
+    const supportedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const finalMime = supportedTypes.includes(mimeType) ? mimeType : 'image/jpeg';
+    const ext = finalMime === 'image/png' ? 'slip.png' : finalMime === 'image/webp' ? 'slip.webp' : 'slip.jpg';
+
+    console.log(`[OCR] Original image: ${imageBuffer.length} bytes, mime=${finalMime}`);
+
+    // Strategy 1: Try original image with task_type=default (same as Playground — best quality)
+    console.log('[OCR] Attempt 1: original image, task_type=default');
+    const attempt1 = await tryOCRWithTaskType(imageBuffer, 'default', finalMime, ext);
+    if (attempt1 && attempt1.length > 30) {
+        console.log(`[OCR] ✅ Success (attempt 1): ${attempt1.length} chars`);
+        return attempt1;
+    }
+    console.warn(`[OCR] Attempt 1 returned too little (${attempt1?.length ?? 0} chars), trying fallback...`);
+
+    // Strategy 2: Fallback — preprocess to grayscale + sharpen, then try both task_types
+    // (handles very dark/noisy images where color actually hurts OCR)
+    console.log('[OCR] Attempt 2: preprocessing image with sharp...');
+    const processedBuffer = await preprocessImageForOCR(imageBuffer);
+    console.log(`[OCR] Preprocessed: ${processedBuffer.length} bytes`);
+
+    for (const taskType of ['default', 'document']) {
+        console.log(`[OCR] Attempt 2 task_type=${taskType}...`);
+        const result = await tryOCRWithTaskType(processedBuffer, taskType, 'image/jpeg', 'slip.jpg');
+        if (result && result.length > 30) {
+            console.log(`[OCR] ✅ Success (fallback task_type=${taskType}): ${result.length} chars`);
+            return result;
+        }
+        console.warn(`[OCR] task_type=${taskType} returned too little (${result?.length ?? 0} chars)`);
+    }
+
+    console.error('[OCR] ❌ All attempts failed to extract meaningful text');
+    return null;
+}
+
+// Shared: post-process parsed slip JSON — verify recipient using configured name/account
+function applyRecipientVerification(result: any, recipientName: string, accountSuffix: string, expectedTotal?: number) {
+    if (typeof result.amount === 'string') {
+        result.amount = parseFloat(result.amount.replace(/,/g, ''));
+    }
+    if (!result.amount || isNaN(result.amount) || !result.date || !result.time) {
+        result.isSlip = false;
+    }
+
+    const foundName: string = result.recipientName || '';
+    const foundAccount: string = result.recipientAccount || '';
+
+    const nameNorm = foundName.replace(/\s+/g, '');
+    const expectedNorm = recipientName.replace(/\s+/g, '');
+    // Match first name, last name, or any word from expected name (flexible for OCR/masking)
+    const nameParts = expectedNorm.split(/\s+/).filter(Boolean);
+    const nameMatch = nameParts.some(part => nameNorm.includes(part)) ||
+        // Allow common OCR substitution ฑ→ท
+        nameNorm.includes(expectedNorm.replace('ฑ', 'ท'));
+    const accountMatch = accountSuffix.length > 0 &&
+        foundAccount.replace(/\D/g, '').endsWith(accountSuffix);
+
+    if (!foundName && !foundAccount) {
+        result.isCorrectRecipient = null;
+    } else {
+        result.isCorrectRecipient = nameMatch || accountMatch;
+    }
+
+    // ตรวจสอบยอดเงินตรงกับที่สั่งหรือไม่
+    if (expectedTotal !== undefined && expectedTotal > 0 && result.amount && !isNaN(result.amount)) {
+        result.isCorrectAmount = Math.abs(result.amount - expectedTotal) < 0.01;
+        result.expectedTotal = expectedTotal;
+    } else {
+        result.isCorrectAmount = null;
+        result.expectedTotal = expectedTotal ?? null;
+    }
+
+    return result;
+}
+
+// Analyze slip using Typhoon OCR + Pathumma LLM (original 2-step flow)
+async function analyzeSlipTyphoon(imageBuffer: Buffer, mimeType: string, recipientName: string, accountSuffix: string, expectedTotal?: number) {
+    const extractedText = await extractTextFromSlip(imageBuffer, mimeType);
+    console.log(`[SLIP][Typhoon] OCR result (${extractedText?.length ?? 0} chars):`, extractedText?.substring(0, 300));
+
+    if (!extractedText) {
+        console.error('[SLIP][Typhoon] OCR returned empty — aborting');
+        return null;
+    }
+
+    const promptText = `วิเคราะห์ข้อมูลสลิปโอนเงิน (อ่านจาก OCR Text) อย่างละเอียด\n` +
+        `เป้าหมาย: ตรวจสอบและดึงข้อมูลการโอนเงิน\n\n` +
+        `ข้อมูลที่อ่านได้จากรูปสลิป:\n"""\n${extractedText}\n"""\n\n` +
+        `กฎสำคัญ:\n` +
+        `1. "amount" ต้องเป็นตัวเลขเท่านั้น (ห้ามมีเครื่องหมายคอมม่า)\n` +
+        `2. "date" หากพบเป็น พ.ศ. ให้แปลงหรือคงไว้ตามนั้น\n` +
+        `3. ยึดข้อมูลตามที่ปรากฏใน OCR Text เป็นหลัก ห้ามเดาหรือสร้างข้อมูลขึ้นมาเอง\n` +
+        `4. หาชื่อผู้รับเงินโอน (ชื่อบัญชี) และเลขบัญชีผู้รับ ให้เก็บเป็น recipientName และ recipientAccount ท้ายใน JSON\n\n` +
+        `รูปแบบ JSON:\n` +
+        `{\n` +
+        `  "isSlip": boolean,\n` +
+        `  "bank": "string",\n` +
+        `  "amount": number,\n` +
+        `  "date": "string",\n` +
+        `  "time": "string",\n` +
+        `  "recipientName": "string | null",\n` +
+        `  "recipientAccount": "string | null",\n` +
+        `  "confidence": number\n` +
+        `}\n\n` +
+        `ตอบเฉพาะ JSON เท่านั้น ห้ามมีคำอธิบายอื่นๆ`;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
+
+    let response;
+    try {
+        response = await fetch(`${API_URL}/chat/completions`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'apikey': API_KEY,
+                'Authorization': `Bearer ${API_KEY}`
             },
             body: JSON.stringify({
                 model: '/model',
-                messages: [
-                    {
-                        role: 'user',
-                        content: [
-                            {
-                                type: 'text',
-                                text: `วิเคราะห์สลิปธนาคารไทยอย่างละเอียด\n` +
-                                    `เป้าหมาย: ตรวจสอบและดึงข้อมูลการโอนเงิน\n\n` +
-                                    `กฎสำคัญ:\n` +
-                                    `1. "amount" ต้องเป็นตัวเลขเท่านั้น (ห้ามมีเครื่องหมายคอมม่า)\n` +
-                                    `2. "date" หากปีเป็น พ.ศ. (เช่น 2568, 2569) ให้คงไว้ตามนั้น\n` +
-                                    `3. ยอดเงินที่คาดหวังคือ ${expectedTotal} บาท (ใช้เพื่อช่วยตรวจสอบ แต่ให้ยึดตามที่เห็นในสลิปจริง)\n` +
-                                    `4. ตรวจสอบ "จำนวนเงิน" หรือ "ยอดโอน" ให้ดี (มักจะอยู่บรรทัดล่างๆ)\n\n` +
-                                    `รูปแบบ JSON:\n` +
-                                    `{\n` +
-                                    `  "isSlip": boolean,\n` +
-                                    `  "bank": "string", // ชื่อธนาคารภาษาไทยหรืออังกฤษ\n` +
-                                    `  "amount": number,\n` +
-                                    `  "date": "string", // DD/MM/YYYY\n` +
-                                    `  "time": "string", // HH:mm\n` +
-                                    `  "confidence": number\n` +
-                                    `}\n\n` +
-                                    `ตอบเฉพาะ JSON เท่านั้น ห้ามมีคำอธิบาย`
-                            },
-                            {
-                                type: 'image_url',
-                                image_url: {
-                                    url: `data:image/jpeg;base64,${base64Image}`
-                                }
-                            }
-                        ]
-                    }
-                ],
-                max_tokens: 500,
+                messages: [{ role: 'user', content: promptText }],
+                max_tokens: 600,
+                temperature: 0.1
             }),
+            signal: controller.signal
         });
-
-        if (!response.ok) return null;
-        const data = await response.json();
-        const content = data.choices?.[0]?.message?.content || '';
-        const jsonMatch = content.match(/\{[\s\S]*?\}/);
-        if (jsonMatch) {
-            let result = JSON.parse(jsonMatch[0]);
-
-            // Post-processing to ensure amount is a number and clean
-            if (typeof result.amount === 'string') {
-                result.amount = parseFloat(result.amount.replace(/,/g, ''));
-            }
-
-            // Strict check: must have amount and date/time to be valid
-            if (!result.amount || isNaN(result.amount) || !result.date || !result.time) {
-                result.isSlip = false;
-            }
-            return result;
-        }
+    } catch (error: any) {
+        clearTimeout(timeoutId);
+        console.error('[SLIP][Typhoon] LLM Network/Timeout Error:', error.message);
         return null;
+    }
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+        console.error('[SLIP][Typhoon] LLM API error:', response.status, await response.text());
+        return null;
+    }
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || '';
+    const jsonMatch = content.match(/\{[\s\S]*?\}/);
+    if (!jsonMatch) return null;
+
+    const result = JSON.parse(jsonMatch[0]);
+    return applyRecipientVerification(result, recipientName, accountSuffix, expectedTotal);
+}
+
+// Analyze slip using AWS Bedrock Claude Vision (1-step)
+async function analyzeSlipBedrock(imageBuffer: Buffer, mimeType: string, region: string, modelId: string, accessKeyId: string, secretAccessKey: string, recipientName: string, accountSuffix: string, expectedTotal?: number) {
+    console.log(`[SLIP][Bedrock] Using model=${modelId} region=${region}`);
+
+    const client = new BedrockRuntimeClient({
+        region,
+        credentials: { accessKeyId, secretAccessKey }
+    });
+
+    const supportedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const finalMime = supportedMimes.includes(mimeType) ? mimeType : 'image/jpeg';
+    const base64Image = imageBuffer.toString('base64');
+
+    const promptText = `วิเคราะห์สลิปโอนเงินในรูปภาพนี้ ดึงข้อมูลต่อไปนี้ออกมาเป็น JSON\n\n` +
+        `กฎสำคัญ:\n` +
+        `1. "amount" ต้องเป็นตัวเลขเท่านั้น (ไม่มีคอมม่า)\n` +
+        `2. ยึดข้อมูลตามที่เห็นในรูป ห้ามเดา\n` +
+        `3. หาชื่อและเลขบัญชีผู้รับเงิน\n\n` +
+        `รูปแบบ JSON:\n` +
+        `{\n` +
+        `  "isSlip": boolean,\n` +
+        `  "bank": "string",\n` +
+        `  "amount": number,\n` +
+        `  "date": "string",\n` +
+        `  "time": "string",\n` +
+        `  "recipientName": "string | null",\n` +
+        `  "recipientAccount": "string | null",\n` +
+        `  "confidence": number\n` +
+        `}\n\nตอบเฉพาะ JSON เท่านั้น`;
+
+    const payload = {
+        anthropic_version: 'bedrock-2023-05-31',
+        max_tokens: 600,
+        temperature: 0.1,
+        messages: [{
+            role: 'user',
+            content: [
+                {
+                    type: 'image',
+                    source: { type: 'base64', media_type: finalMime, data: base64Image }
+                },
+                { type: 'text', text: promptText }
+            ]
+        }]
+    };
+
+    try {
+        const command = new InvokeModelCommand({
+            modelId,
+            body: JSON.stringify(payload),
+            contentType: 'application/json',
+            accept: 'application/json',
+        });
+        const response = await client.send(command);
+        const body = JSON.parse(new TextDecoder().decode(response.body));
+        const content = body.content?.[0]?.text || '';
+        console.log('[SLIP][Bedrock] raw response:', content.substring(0, 500));
+
+        const jsonMatch = content.match(/\{[\s\S]*?\}/);
+        if (!jsonMatch) return null;
+
+        const result = JSON.parse(jsonMatch[0]);
+        return applyRecipientVerification(result, recipientName, accountSuffix, expectedTotal);
+    } catch (error: any) {
+        console.error('[SLIP][Bedrock] Error:', error.message);
+        return null;
+    }
+}
+
+// Analyze slip — routes to Typhoon or Bedrock based on admin config
+export async function analyzeSlip(imageBuffer: Buffer, expectedTotal: number, mimeType: string = 'image/jpeg') {
+    try {
+        const config = await getAiSettings();
+        console.log(`[SLIP] Provider: ${config.aiProvider}`);
+
+        if (config.aiProvider === 'bedrock') {
+            return await analyzeSlipBedrock(
+                imageBuffer, mimeType,
+                config.bedrockRegion, config.bedrockModelId,
+                config.bedrockAccessKeyId, config.bedrockSecretAccessKey,
+                config.recipientName, config.recipientAccountSuffix,
+                expectedTotal
+            );
+        }
+
+        return await analyzeSlipTyphoon(imageBuffer, mimeType, config.recipientName, config.recipientAccountSuffix, expectedTotal);
     } catch (error) {
         console.error('Slip Analysis Error:', error);
         return null;
@@ -121,13 +359,17 @@ export async function chatbotVerifySlip(formData: FormData, expectedTotal: numbe
 
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
+        const mimeType = file.type || 'image/jpeg'; // preserve actual file MIME type
+
+        // Debug: log file info to diagnose OCR issues
+        console.log(`[VERIFY] File received: name="${file.name}", type="${file.type}", size=${file.size} bytes, buffer=${buffer.length} bytes`);
 
         // 1. Upload for preview/storage
         const slipUrl = await uploadSlip(formData);
         if (!slipUrl) return { success: false, error: 'อัพโหลดสลิปไม่สำเร็จ' };
 
-        // 2. AI Analysis
-        const analysis = await analyzeSlip(buffer, expectedTotal);
+        // 2. AI Analysis (pass real MIME type to OCR)
+        const analysis = await analyzeSlip(buffer, expectedTotal, mimeType);
 
         if (!analysis || !analysis.isSlip) {
             return {
@@ -163,6 +405,9 @@ export async function chatbotUploadSlipAndCreateOrder(
 
         let status = forcedStatus || 'PENDING';
         if (!forcedStatus && Math.abs(totalPaid - orderData.total) < 0.01) {
+            status = 'PAID';
+        }
+        if (!forcedStatus && totalPaid >= orderData.total) { // Extra safe check (equal or overpaid)
             status = 'PAID';
         }
 

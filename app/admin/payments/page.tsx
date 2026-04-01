@@ -1,10 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ChangeEvent, MouseEvent } from 'react';
 import { getAdminPaymentMethods, togglePaymentMethod, createPaymentMethod, deletePaymentMethod } from '../actions';
 
+interface PaymentMethod {
+    id: number;
+    bankName: string;
+    accountName: string;
+    accountNumber: string;
+    qrCodeUrl: string | null;
+    isActive: boolean;
+}
+
 export default function AdminPaymentMethodsPage() {
-    const [methods, setMethods] = useState<any[]>([]);
+    const [methods, setMethods] = useState<PaymentMethod[]>([]);
 
     // Form State
     const [showAddForm, setShowAddForm] = useState(false);
@@ -21,7 +30,7 @@ export default function AdminPaymentMethodsPage() {
 
     async function loadData() {
         const data = await getAdminPaymentMethods();
-        setMethods(data);
+        setMethods(data as PaymentMethod[]);
     }
 
     useEffect(() => {
@@ -30,12 +39,10 @@ export default function AdminPaymentMethodsPage() {
 
     async function handleToggle(id: number, current: boolean) {
         await togglePaymentMethod(id, !current);
-        loadData();
+        await loadData();
     }
 
-
-
-    function handleEdit(method: any) {
+    function handleEdit(method: PaymentMethod) {
         setEditingId(method.id);
         setBankName(method.bankName);
         setAccountName(method.accountName);
@@ -66,7 +73,7 @@ export default function AdminPaymentMethodsPage() {
         }
 
         resetForm();
-        loadData();
+        await loadData();
     }
 
     function resetForm() {
@@ -82,7 +89,7 @@ export default function AdminPaymentMethodsPage() {
     async function handleDelete(id: number) {
         if (!confirm('ยืนยันลบบัญชีธนาคารนี้?')) return;
         await deletePaymentMethod(id);
-        loadData();
+        await loadData();
     }
 
     function showQr(url: string) {
@@ -105,15 +112,32 @@ export default function AdminPaymentMethodsPage() {
                     <div className="row g-3">
                         <div className="col-md-3">
                             <label className="form-label small">ธนาคาร/ผู้ให้บริการ</label>
-                            <input type="text" className="form-control" value={bankName} onChange={e => setBankName(e.target.value)} placeholder="เช่น กสิกรไทย, พร้อมเพย์" />
+                            <input
+                                type="text"
+                                className="form-control"
+                                value={bankName}
+                                onChange={(e: ChangeEvent<HTMLInputElement>) => setBankName(e.target.value)}
+                                placeholder="เช่น กสิกรไทย, พร้อมเพย์"
+                            />
                         </div>
                         <div className="col-md-3">
                             <label className="form-label small">ชื่อบัญชี</label>
-                            <input type="text" className="form-control" value={accountName} onChange={e => setAccountName(e.target.value)} placeholder="ชื่อ นามสกุล" />
+                            <input
+                                type="text"
+                                className="form-control"
+                                value={accountName}
+                                onChange={(e: ChangeEvent<HTMLInputElement>) => setAccountName(e.target.value)}
+                                placeholder="ชื่อ นามสกุล"
+                            />
                         </div>
                         <div className="col-md-3">
                             <label className="form-label small">เลขที่บัญชี / เบอร์โทร</label>
-                            <input type="text" className="form-control" value={accountNumber} onChange={e => setAccountNumber(e.target.value)} />
+                            <input
+                                type="text"
+                                className="form-control"
+                                value={accountNumber}
+                                onChange={(e: ChangeEvent<HTMLInputElement>) => setAccountNumber(e.target.value)}
+                            />
                         </div>
                         <div className="col-md-3">
                             <label className="form-label small">อัปโหลด QR Code</label>
@@ -121,7 +145,7 @@ export default function AdminPaymentMethodsPage() {
                                 type="file"
                                 className="form-control"
                                 accept="image/*"
-                                onChange={e => e.target.files?.[0] && setSelectedFile(e.target.files[0])}
+                                onChange={(e: ChangeEvent<HTMLInputElement>) => e.target.files?.[0] && setSelectedFile(e.target.files[0])}
                             />
                         </div>
                         <div className="col-12 d-flex justify-content-end gap-2 mt-3">
@@ -146,7 +170,7 @@ export default function AdminPaymentMethodsPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {methods.map(m => (
+                            {methods.map((m: PaymentMethod) => (
                                 <tr key={m.id}>
                                     <td className="ps-4 fw-bold">{m.bankName}</td>
                                     <td>{m.accountName}</td>
@@ -156,7 +180,7 @@ export default function AdminPaymentMethodsPage() {
                                             <i
                                                 className="bi bi-qr-code text-primary fs-5"
                                                 title="คลิกเพื่อดูรูป QR"
-                                                onClick={() => showQr(m.qrCodeUrl)}
+                                                onClick={() => m.qrCodeUrl && showQr(m.qrCodeUrl)}
                                                 style={{ cursor: 'pointer' }}
                                             ></i>
                                         ) : <span className="text-muted small">ไม่มี</span>}
@@ -205,7 +229,7 @@ export default function AdminPaymentMethodsPage() {
                     onClick={() => setShowQrModal(false)}
                 >
                     <div className="modal-dialog modal-dialog-centered">
-                        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-content" onClick={(e: MouseEvent<HTMLDivElement>) => e.stopPropagation()}>
                             <div className="modal-header">
                                 <h5 className="modal-title">QR Code สำหรับชำระเงิน</h5>
                                 <button type="button" className="btn-close" onClick={() => setShowQrModal(false)}></button>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ChangeEvent } from 'react';
 import Link from 'next/link';
 import { getGroups, getMembers, getMemberOrders } from '../actions';
 // We likely need to format date, let's allow basic JS date toLocaleString for now
@@ -96,7 +96,7 @@ export default function MyOrdersPage() {
                                 <select
                                     className="form-select"
                                     value={selectedGroupId}
-                                    onChange={(e) => {
+                                    onChange={(e: ChangeEvent<HTMLSelectElement>) => {
                                         setSelectedGroupId(Number(e.target.value));
                                         setSelectedMemberId('');
                                     }}
@@ -112,7 +112,7 @@ export default function MyOrdersPage() {
                                 <select
                                     className="form-select"
                                     value={selectedMemberId}
-                                    onChange={(e) => setSelectedMemberId(Number(e.target.value))}
+                                    onChange={(e: ChangeEvent<HTMLSelectElement>) => setSelectedMemberId(Number(e.target.value))}
                                     disabled={!selectedGroupId}
                                 >
                                     <option value="">-- เลือกชื่อของคุณ --</option>
